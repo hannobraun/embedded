@@ -17,6 +17,11 @@ main > h1 {
 	font-size    : 85%;
 }
 
+a.footnote {
+	font-size: 75%;
+	vertical-align: super;
+}
+
 hr {
 	width: 85%;
 

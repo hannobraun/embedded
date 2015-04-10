@@ -1,3 +1,7 @@
+body {
+	font-family: Helvetica;
+}
+
 main {
 	max-width: 33em;
 	margin-left: 3em;

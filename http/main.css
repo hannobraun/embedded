@@ -7,6 +7,16 @@ main {
 	margin-left: 3em;
 }
 
+main > h1 {
+	margin-top: 0em;
+}
+
+.date {
+	margin-bottom: 0em;
+	font-weight  : bold;
+	font-size    : 85%;
+}
+
 hr {
 	width: 85%;
 

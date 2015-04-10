@@ -13,3 +13,16 @@ hr {
 	margin-top   : 2em;
 	margin-bottom: 2em;
 }
+
+main footer {
+	font-size: 75%;
+}
+
+.footer-number {
+	font-weight: bold;
+	float      : left;
+}
+
+main footer p {
+	margin-left: 2em;
+}

@@ -2,9 +2,19 @@ body {
 	font-family: Helvetica;
 }
 
-main {
+main, body > footer {
 	max-width  : 33em;
 	margin-left: 3em;
+}
+
+body > footer {
+	margin-top: 2em;
+}
+
+body > footer p {
+	text-align : center;
+	font-size  : 85%;
+	font-weight: bold;
 }
 
 main > h1 {

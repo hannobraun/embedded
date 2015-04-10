@@ -6,3 +6,10 @@ main {
 	max-width: 33em;
 	margin-left: 3em;
 }
+
+hr {
+	width: 85%;
+
+	margin-top   : 2em;
+	margin-bottom: 2em;
+}

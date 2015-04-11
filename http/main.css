@@ -27,6 +27,16 @@ main > h1 {
 	font-size    : 85%;
 }
 
+a {
+	text-decoration: none;
+	font-weight    : bold;
+	color          : #0000b0;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
 a.footnote {
 	font-size: 75%;
 	vertical-align: super;

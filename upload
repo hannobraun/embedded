@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # ATTENTION:
 # Before calling this script, the Arduino needs to be erased. Until we figure

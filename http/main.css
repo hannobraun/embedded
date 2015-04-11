@@ -71,3 +71,7 @@ main footer {
 main footer p {
 	margin-left: 2em;
 }
+
+code, pre {
+	background-color: #ccccff;
+}

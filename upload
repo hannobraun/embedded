@@ -6,4 +6,4 @@
 # Just make sure to press the tiny "Erase" button on the Arduino Due before
 # uploading and everything should work.
 
-bossac --erase --write --verify --boot -R $1
+bossac --write --verify --boot -R $1

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# ATTENTION:
+# Before calling this script, the Arduino needs to be erased. Until we figure
+# out how to do that automatically, doing it manually is a feasible workaround.
+# Just make sure to press the tiny "Erase" button on the Arduino Due before
+# uploading and everything should work.
+
+bossac --erase --write --verify --boot -R $1

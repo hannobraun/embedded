@@ -31,16 +31,7 @@ ARDUINO_TMP=/tmp/build7671134933141820113.tmp/
 
 arm-none-eabi-g++ \
 	-c \
-	-g \
-	-Os \
-	-w \
-	-ffunction-sections \
-	-fdata-sections \
 	-nostdlib \
-	-fno-threadsafe-statics \
-	--param max-inline-insns-single=500 \
-	-fno-rtti \
-	-fno-exceptions \
 	-Dprintf=iprintf \
 	-MMD \
 	-mcpu=cortex-m3 \

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>embedded.hannobraun.de</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+	</head>
+
+	<body>
+		<main>
+			<p class="date">2015-04-12</p>
+			<h1>Building Our Program Manually</h1>
+
+			<p>
+				<a href="/2015-04-11-manually-uploading-the-program">Last
+				time</a>, we stopped relying on the Arduino IDE for uploading
+				the program to the board. Today, I'm going to show you how to
+				build the program ourselves. To get started, we first need to
+				translate our <code>blink.ino</code> file into proper C code:
+			</p>
+
+			<pre>
+// blink.c
+
+#include &lt;Arduino.h&gt;
+
+int led = 13;
+
+void setup() {
+	pinMode(led, OUTPUT);
+}
+
+void loop() {
+	digitalWrite(led, HIGH);
+	delay(200);
+	digitalWrite(led, LOW);
+	delay(800);
+}
+			</pre>
+
+			<p>
+				As you can see, besides including the Arduino header file,
+				nothing has changed<a class="footnote" href="#note-1">[1]</a>.
+			</p>
+
+			<p>
+				Ok then, how do we turn this C file into something we can upload
+				to the Arduino Due? This question turned out to be surprisingly
+				easy to answer: Just run an Arduino IDE build with verbose
+				output and see what it does. As I found out, the Arduino IDE
+				first builds our program into an object file. Here's how we can
+				do that:
+			</p>
+
+			<pre>
+ARDUINO_IDE=&lt;insert path to Arduino IDE&gt;
+
+arm-none-eabi-g++ \
+	-c \
+	-nostdlib \
+	-Dprintf=iprintf \
+	-MMD \
+	-mcpu=cortex-m3 \
+	-DF_CPU=84000000L \
+	-DARDUINO=10700 \
+	-DARDUINO_SAM_DUE \
+	-DARDUINO_ARCH_SAM \
+	-D__SAM3X8E__ \
+	-mthumb \
+	-DUSB_VID=0x2a03 \
+	-DUSB_PID=0x003e \
+	-DUSBCON \
+	-DUSB_MANUFACTURER="Unknown" \
+	-DUSB_PRODUCT="Arduino Due" \
+	-I$ARDUINO_IDE/hardware/arduino/sam/system/libsam \
+	-I$ARDUINO_IDE/hardware/arduino/sam/system/CMSIS/CMSIS/Include/ \
+	-I$ARDUINO_IDE/hardware/arduino/sam/system/CMSIS/Device/ATMEL/ \
+	-I$ARDUINO_IDE/hardware/arduino/sam/cores/arduino \
+	-I$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x \
+	blink.c \
+	-o blink.o
+			</pre>
+
+			<p>
+				There are several things to note about this command:
+			</p>
+
+			<ul>
+				<li>
+					This uses the <code>arm-none-eabi-g++</code> compiler, which
+					is a version of <code>g++</code> that's specific to the kind
+					of ARM-based microcontrollers that the Arduino Due is an
+					example of<a class="footnote" href="#note-2">[2]</a>.
+				</li>
+				<li>
+					I've removed a lot of optimization flags that would have
+					been useful eventually, but complicated this build step. For
+					now, I'm only interested in getting something simple to
+					work. We can refine our approach later.
+				</li>
+				<li>
+					The flags that are left tell the compiler to generate an
+					object file (<code>blink.o</code>), without linking the C
+					standard library and also give it some details about the
+					target CPU and the Arduino Due. All of this is not terribly
+					interesting, as I'm going to replace all this stuff with
+					something else in a future article.
+				</li>
+			</ul>
+
+			<p>
+				Now we've built our program, but that's not all. We still need
+				to build the final executable that has all the Arduino libraries
+				linked into it<a class="footnote" href="#note-3">[3]</a>:
+			</p>
+
+			<pre>
+ARDUINO_IDE=&lt;insert path to Arduino IDE&gt;
+ARDUINO_TMP=&lt;insert path of the IDE's temporary build directory&gt;
+
+arm-none-eabi-gcc \
+	-Wl,--gc-sections \
+	-mcpu=cortex-m3 \
+	-T$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/linker_scripts/gcc/flash.ld \
+	-L$ARDUINO_TMP \
+	-mthumb \
+	-Wl,--entry=Reset_Handler \
+	-Wl,--start-group \
+		$ARDUINO_TMP/syscalls_sam3.c.o blink.o \
+		$ARDUINO_TMP/variant.cpp.o \
+		$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/libsam_sam3x8e_gcc_rel.a \
+		$ARDUINO_TMP/core.a \
+	-Wl,--end-group \
+	-lm \
+	-o blink.elf
+			</pre>
+
+			<p>
+				This second build command takes our previously built object file
+				and several Arduino library files and generates an executable
+				file (<code>blink.elf</code>) out of that. Again, there are
+				several things to note about this command:
+			</p>
+
+			<ul>
+				<li>
+					The various Arduino libraries we need are actually not
+					distributed in compiled form with the Arduino IDE. They are
+					built as part of our program's build process. This means for
+					this to work, you need to run a build using the Arduino IDE
+					at least once. I ran this for the program from my
+					<a href="/2015-04-10-hello-world">first article</a>, but I
+					suspect any other Arduino sketch will work, too.
+				</li>
+				<li>
+					After you run that build, you need to find out the path of
+					the temporary directory that the Arduino IDE saves the
+					libraries we need in. You can easily do this by enabling
+					verbose build output (<code>File -> Preferences</code>). On
+					a Linux system, the path should look something like this:
+					<code>/tmp/build7671134933141820113.tmp</code>.
+				</li>
+				<li>
+					Again, the other details of that command are not that
+					interesting, as it will be replaced later.
+				</li>
+			</ul>
+
+			<p>
+				Now we have an executable for our program, but we're still not
+				done! The executable we built is in the
+				<a href="http://en.wikipedia.org/wiki/Executable_and_Linkable_Format">ELF</a>
+				format. This format is used on a lot of operating systems, but
+				for a bare-metal ARM board, we need something different:
+			</p>
+
+			<pre>
+arm-none-eabi-objcopy -O binary blink.elf blink.bin
+			</pre>
+
+			<p>
+				This final command will convert the binary into the correct
+				format. We can upload this to the Due using the method from the
+				<a href="/2015-04-11-manually-uploading-the-program">last
+				article</a>:
+			</p>
+
+			<pre>
+bossac --write --verify --boot -R blink.bin
+			</pre>
+
+			<p>
+				If everything worked out, the code will be uploaded to the board
+				and you can watch the built-in LED blink to your heart's
+				content. Don't forget that you need to erase the board before
+				the upload (using the <code>ERASE</code> button).
+			</p>
+
+			<p>
+				That's it for today. As always, the full code is available
+				<a href="https://github.com/hannobraun/embedded">on GitHub</a>.
+				See you next time!
+			</p>
+
+			<hr />
+
+			<footer>
+				<a name="note-1"></a>
+				<span class="footnote-number">[1]</span>
+				<p>
+					Actually, I did sneak another change in: The timing of the
+					blinking has changed. I did this so I can tell the
+					difference between <code>arduino.ino</code> and
+					<code>arduino.c</code> programs, once they have been
+					uploaded to the board.
+				</p>
+
+				<a name="note-2"></a>
+				<span class="footnote-number">[2]</span>
+				<p>
+					As I said before, I'm using Ubuntu, so I could simply
+					install this via
+					<code>sudo apt-get install gcc-arm-none-eabi</code>.
+				</p>
+
+				<a name="note-3"></a>
+				<span class="footnote-number">[3]</span>
+				<p>
+					Even though we're in the process of removing the Arduino IDE
+					from the build process, we're still using the Arduino
+					libraries for our program. So for the time being, we still
+					need to link them in.
+				</p>
+			</footer>
+
+			<hr />
+		</main>
+
+		<footer>
+			<p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+		</footer>
+	</body>
+</html>

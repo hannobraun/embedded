@@ -14,9 +14,9 @@
 			<p>
 				<a href="/2015-04-11-manually-uploading-the-program">Last
 				time</a>, we stopped relying on the Arduino IDE for uploading
-				the program to the board. Today, I'm going to show you how to
-				build the program ourselves. To get started, we first need to
-				translate our <code>blink.ino</code> file into proper C code:
+				the program to the board. Today, I'm going to show you how we
+				can build the program ourselves. To get started, we first need
+				to translate our <code>blink.ino</code> file into proper C code:
 			</p>
 
 			<pre>
@@ -48,7 +48,7 @@ void loop() {
 				to the Arduino Due? This question turned out to be surprisingly
 				easy to answer: Just run an Arduino IDE build with verbose
 				output and see what it does. As I found out, the Arduino IDE
-				first builds our program into an object file. Here's how we can
+				first compiles the program into an object file. Here's how we can
 				do that:
 			</p>
 
@@ -88,9 +88,9 @@ arm-none-eabi-g++ \
 			<ul>
 				<li>
 					This uses the <code>arm-none-eabi-g++</code> compiler, which
-					is a version of <code>g++</code> that's specific to the kind
-					of ARM-based microcontrollers that the Arduino Due is an
-					example of<a class="footnote" href="#note-2">[2]</a>.
+					is a version of <code>g++</code> that's specific to
+					ARM-based
+					microcontrollers<a class="footnote" href="#note-2">[2]</a>.
 				</li>
 				<li>
 					I've removed a lot of optimization flags that would have
@@ -100,18 +100,19 @@ arm-none-eabi-g++ \
 				</li>
 				<li>
 					The flags that are left tell the compiler to generate an
-					object file (<code>blink.o</code>), without linking the C
+					object file (<code>blink.o</code>) without linking in the
 					standard library and also give it some details about the
 					target CPU and the Arduino Due. All of this is not terribly
-					interesting, as I'm going to replace all this stuff with
-					something else in a future article.
+					interesting, as I'm going to replace all of this stuff with
+					something else in the future.
 				</li>
 			</ul>
 
 			<p>
-				Now we've built our program, but that's not all. We still need
-				to build the final executable that has all the Arduino libraries
-				linked into it<a class="footnote" href="#note-3">[3]</a>:
+				Now we've compiled our program, but that's not all. We still
+				need to build the final executable that has all the Arduino
+				libraries linked into
+				it<a class="footnote" href="#note-3">[3]</a>:
 			</p>
 
 			<pre>
@@ -136,28 +137,27 @@ arm-none-eabi-gcc \
 			</pre>
 
 			<p>
-				This second build command takes our previously built object file
-				and several Arduino library files and generates an executable
-				file (<code>blink.elf</code>) out of that. Again, there are
-				several things to note about this command:
+				This second build command gnerates an executable file
+				(<code>blink.elf</code>) from our object file and several
+				Arduino libraries. Again, there are several things to note here:
 			</p>
 
 			<ul>
 				<li>
 					The various Arduino libraries we need are actually not
 					distributed in compiled form with the Arduino IDE. They are
-					built as part of our program's build process. This means for
-					this to work, you need to run a build using the Arduino IDE
-					at least once. I ran this for the program from my
+					built as part of our program's build process. This means,
+					for this to work, you have to run a build using the Arduino
+					IDE at least once. I ran a build of the program from my
 					<a href="/2015-04-10-hello-world">first article</a>, but I
-					suspect any other Arduino sketch will work, too.
+					suspect any Arduino sketch will do.
 				</li>
 				<li>
-					After you run that build, you need to find out the path of
-					the temporary directory that the Arduino IDE saves the
-					libraries we need in. You can easily do this by enabling
-					verbose build output (<code>File -> Preferences</code>). On
-					a Linux system, the path should look something like this:
+					After you run that build, you need to find out where the
+					Arduino IDE saves the libraries we need. You can easily do
+					this by enabling verbose build output
+					(<code>File -> Preferences</code>). On a Linux system, the
+					path should look something like this:
 					<code>/tmp/build7671134933141820113.tmp</code>.
 				</li>
 				<li>
@@ -170,8 +170,8 @@ arm-none-eabi-gcc \
 				Now we have an executable for our program, but we're still not
 				done! The executable we built is in the
 				<a href="http://en.wikipedia.org/wiki/Executable_and_Linkable_Format">ELF</a>
-				format. This format is used on a lot of operating systems, but
-				for a bare-metal ARM board, we need something different:
+				format. ELF is used on many operating systems, but for a
+				bare-metal ARM board, we need something different:
 			</p>
 
 			<pre>
@@ -180,8 +180,8 @@ arm-none-eabi-objcopy -O binary blink.elf blink.bin
 
 			<p>
 				This final command will convert the binary into the correct
-				format. We can upload this to the Due using the method from the
-				<a href="/2015-04-11-manually-uploading-the-program">last
+				format. We can upload this to the Due using the method outlined
+				in the <a href="/2015-04-11-manually-uploading-the-program">last
 				article</a>:
 			</p>
 
@@ -191,7 +191,7 @@ bossac --write --verify --boot -R blink.bin
 
 			<p>
 				If everything worked out, the code will be uploaded to the board
-				and you can watch the built-in LED blink to your heart's
+				and you can keep watching the LED blinking to your heart's
 				content. Don't forget that you need to erase the board before
 				the upload (using the <code>ERASE</code> button).
 			</p>
@@ -208,11 +208,10 @@ bossac --write --verify --boot -R blink.bin
 				<a name="note-1"></a>
 				<span class="footnote-number">[1]</span>
 				<p>
-					Actually, I did sneak another change in: The timing of the
-					blinking has changed. I did this so I can tell the
-					difference between <code>arduino.ino</code> and
-					<code>arduino.c</code> programs, once they have been
-					uploaded to the board.
+					Actually, I did sneak another change in: I've updated the
+					timing of the blinking, so I can tell the difference between
+					the <code>blink.ino</code> and <code>blink.c</code>
+					programs once they are running on the board.
 				</p>
 
 				<a name="note-2"></a>
@@ -220,7 +219,8 @@ bossac --write --verify --boot -R blink.bin
 				<p>
 					As I said before, I'm using Ubuntu, so I could simply
 					install this via
-					<code>sudo apt-get install gcc-arm-none-eabi</code>.
+					<code>sudo apt-get install gcc-arm-none-eabi</code>. I'm
+					pretty sure it is available on other platforms, too.
 				</p>
 
 				<a name="note-3"></a>

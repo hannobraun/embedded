@@ -52,7 +52,7 @@ arm-none-eabi-g++ \
 	-I$ARDUINO_IDE/hardware/arduino/sam/cores/arduino \
 	-I$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x \
 	blink.c \
-	-o blink.o
+	-o blink.o &&
 
 arm-none-eabi-gcc \
 	-Os \
@@ -79,11 +79,11 @@ arm-none-eabi-gcc \
 	-Wl,--end-group \
 	-lm \
 	-gcc \
-	-o blink.elf
+	-o blink.elf &&
 
 arm-none-eabi-objcopy \
 	-O binary \
 	blink.elf \
-	blink.bin
+	blink.bin &&
 
 bossac --write --verify --boot -R blink.bin

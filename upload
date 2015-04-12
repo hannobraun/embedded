@@ -55,30 +55,19 @@ arm-none-eabi-g++ \
 	-o blink.o &&
 
 arm-none-eabi-gcc \
-	-Os \
 	-Wl,--gc-sections \
 	-mcpu=cortex-m3 \
 	-T$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/linker_scripts/gcc/flash.ld \
-	-Wl,-Map,$ARDUINO_TMP/blink.cpp.map \
 	-L$ARDUINO_TMP \
 	-mthumb \
-	-Wl,--cref \
-	-Wl,--check-sections \
-	-Wl,--gc-sections \
 	-Wl,--entry=Reset_Handler \
-	-Wl,--unresolved-symbols=report-all \
-	-Wl,--warn-common \
-	-Wl,--warn-section-align \
-	-Wl,--warn-unresolved-symbols \
 	-Wl,--start-group \
-	$ARDUINO_TMP/syscalls_sam3.c.o \
-	blink.o \
-	$ARDUINO_TMP/variant.cpp.o \
-	$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/libsam_sam3x8e_gcc_rel.a \
-	$ARDUINO_TMP/core.a \
+		$ARDUINO_TMP/syscalls_sam3.c.o blink.o \
+		$ARDUINO_TMP/variant.cpp.o \
+		$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/libsam_sam3x8e_gcc_rel.a \
+		$ARDUINO_TMP/core.a \
 	-Wl,--end-group \
 	-lm \
-	-gcc \
 	-o blink.elf &&
 
 arm-none-eabi-objcopy \

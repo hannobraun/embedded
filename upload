@@ -6,4 +6,93 @@
 # Just make sure to press the tiny "Erase" button on the Arduino Due before
 # uploading and everything should work.
 
-bossac --write --verify --boot -R $1
+# ATTENTION 2:
+# At this point, the repository is in a weird transition state between having
+# its own build system and making use of the Arduino IDE. Before this script can
+# work, you need to do the following:
+# 1. Open the Arduino sketch (blink/blink.ino) with the Arduino IDE and build
+#    it.
+# 2. Modify the two variables below, so they match the paths on your system.
+
+# The following variables need to be modified for your system before the build
+# can work.
+
+# Installation directory of the Arduino IDE
+ARDUINO_IDE=/home/hanno/Downloads/arduino-1.7.0-linux64
+
+# The temporary directory where the Arduino IDE saves all files related the the
+# build. You can find out the path of that directory by configuring the IDE to
+# print verbose output. When you start a build, you should see a path like the
+# one below being used.
+ARDUINO_TMP=/tmp/build7671134933141820113.tmp/
+
+# From here on out, the script *should* work without system-specific
+# modifications.
+
+arm-none-eabi-g++ \
+	-c \
+	-g \
+	-Os \
+	-w \
+	-ffunction-sections \
+	-fdata-sections \
+	-nostdlib \
+	-fno-threadsafe-statics \
+	--param max-inline-insns-single=500 \
+	-fno-rtti \
+	-fno-exceptions \
+	-Dprintf=iprintf \
+	-MMD \
+	-mcpu=cortex-m3 \
+	-DF_CPU=84000000L \
+	-DARDUINO=10700 \
+	-DARDUINO_SAM_DUE \
+	-DARDUINO_ARCH_SAM \
+	-D__SAM3X8E__ \
+	-mthumb \
+	-DUSB_VID=0x2a03 \
+	-DUSB_PID=0x003e \
+	-DUSBCON \
+	-DUSB_MANUFACTURER="Unknown" \
+	-DUSB_PRODUCT="Arduino Due" \
+	-I$ARDUINO_IDE/hardware/arduino/sam/system/libsam \
+	-I$ARDUINO_IDE/hardware/arduino/sam/system/CMSIS/CMSIS/Include/ \
+	-I$ARDUINO_IDE/hardware/arduino/sam/system/CMSIS/Device/ATMEL/ \
+	-I$ARDUINO_IDE/hardware/arduino/sam/cores/arduino \
+	-I$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x \
+	blink.c \
+	-o blink.o
+
+arm-none-eabi-gcc \
+	-Os \
+	-Wl,--gc-sections \
+	-mcpu=cortex-m3 \
+	-T$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/linker_scripts/gcc/flash.ld \
+	-Wl,-Map,$ARDUINO_TMP/blink.cpp.map \
+	-L$ARDUINO_TMP \
+	-mthumb \
+	-Wl,--cref \
+	-Wl,--check-sections \
+	-Wl,--gc-sections \
+	-Wl,--entry=Reset_Handler \
+	-Wl,--unresolved-symbols=report-all \
+	-Wl,--warn-common \
+	-Wl,--warn-section-align \
+	-Wl,--warn-unresolved-symbols \
+	-Wl,--start-group \
+	$ARDUINO_TMP/syscalls_sam3.c.o \
+	blink.o \
+	$ARDUINO_TMP/variant.cpp.o \
+	$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/libsam_sam3x8e_gcc_rel.a \
+	$ARDUINO_TMP/core.a \
+	-Wl,--end-group \
+	-lm \
+	-gcc \
+	-o blink.elf
+
+arm-none-eabi-objcopy \
+	-O binary \
+	blink.elf \
+	blink.bin
+
+bossac --write --verify --boot -R blink.bin

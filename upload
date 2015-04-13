@@ -62,7 +62,8 @@ arm-none-eabi-gcc \
 	-mthumb \
 	-Wl,--entry=Reset_Handler \
 	-Wl,--start-group \
-		$ARDUINO_TMP/syscalls_sam3.c.o blink.o \
+		$ARDUINO_TMP/syscalls_sam3.c.o \
+		blink.o \
 		$ARDUINO_TMP/variant.cpp.o \
 		$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/libsam_sam3x8e_gcc_rel.a \
 		$ARDUINO_TMP/core.a \

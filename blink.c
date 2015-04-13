@@ -17,28 +17,18 @@ void sleep_ms(int milliseconds) {
 	while (*timer_value_register < sleep_until) {}
 }
 
-
-void setup() {
+int main() {
 	// Parallel I/O
 	*pb_pio_enable    = pb27_mask;
 	*pb_output_enable = pb27_mask;
 
 	// Real-time Timer
 	*timer_mode_register = 0x00000020;
-}
-
-void loop() {
-	*pb_set_output_data = pb27_mask;
-	sleep_ms(200);
-	*pb_clear_output_data = pb27_mask;
-	sleep_ms(800);
-}
-
-
-int main() {
-	setup();
 
 	while (1) {
-		loop();
+		*pb_set_output_data = pb27_mask;
+		sleep_ms(200);
+		*pb_clear_output_data = pb27_mask;
+		sleep_ms(800);
 	}
 }

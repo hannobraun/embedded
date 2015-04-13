@@ -32,25 +32,8 @@ ARDUINO_TMP=/tmp/build7671134933141820113.tmp/
 arm-none-eabi-g++ \
 	-c \
 	-nostdlib \
-	-Dprintf=iprintf \
-	-MMD \
 	-mcpu=cortex-m3 \
-	-DF_CPU=84000000L \
-	-DARDUINO=10700 \
-	-DARDUINO_SAM_DUE \
-	-DARDUINO_ARCH_SAM \
-	-D__SAM3X8E__ \
 	-mthumb \
-	-DUSB_VID=0x2a03 \
-	-DUSB_PID=0x003e \
-	-DUSBCON \
-	-DUSB_MANUFACTURER="Unknown" \
-	-DUSB_PRODUCT="Arduino Due" \
-	-I$ARDUINO_IDE/hardware/arduino/sam/system/libsam \
-	-I$ARDUINO_IDE/hardware/arduino/sam/system/CMSIS/CMSIS/Include/ \
-	-I$ARDUINO_IDE/hardware/arduino/sam/system/CMSIS/Device/ATMEL/ \
-	-I$ARDUINO_IDE/hardware/arduino/sam/cores/arduino \
-	-I$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x \
 	blink.c \
 	-o blink.o &&
 

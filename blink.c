@@ -1,6 +1,3 @@
-#include <Arduino.h>
-
-
 // Parallel I/O
 volatile int *pb_pio_enable          = (int *)0x400E1000;
 volatile int *pb_output_enable       = (int *)0x400E1010;
@@ -35,4 +32,13 @@ void loop() {
 	sleep_ms(200);
 	*pb_clear_output_data = pb27_mask;
 	sleep_ms(800);
+}
+
+
+int main() {
+	setup();
+
+	while (1) {
+		loop();
+	}
 }

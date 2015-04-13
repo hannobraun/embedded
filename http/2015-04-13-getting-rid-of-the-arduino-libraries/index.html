@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>embedded.hannobraun.de</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+	</head>
+
+	<body>
+		<main>
+			<p class="date">2015-04-13</p>
+			<h1>Getting Rid of the Arduino Libraries</h1>
+
+			<p>
+				<a href="/2015-04-13-getting-rid-of-the-arduino-libraries">In my
+				last article</a>, we took the build process of our program into
+				our own hands, although we do still rely on the Arduino
+				libraries, and therefore the Arduino IDE that builds them. But
+				today marks another brave step towards independence from the
+				tyranny of Arduino<a class="footnote" href="#note-1">[1]</a>:
+				Those Arduino-specific function calls that made the LED blink?
+				All gone. Check out the new version of the program:
+			</p>
+
+			<pre>
+// blink.c
+
+// Addresses of several registers used to control parallel I/O.
+volatile int *pb_pio_enable          = (int *)0x400E1000;
+volatile int *pb_output_enable       = (int *)0x400E1010;
+volatile int *pb_set_output_data     = (int *)0x400E1030;
+volatile int *pb_clear_output_data   = (int *)0x400E1034;
+
+// Bit mask for PB27. This is pin 13 (the built-in LED) on the Arduino Due.
+int pb27_mask = 0x08000000;
+
+// Addresses of several registers used to control the real-time timer.
+volatile int *timer_mode_register  = (int *)0x400E1A30;
+volatile int *timer_value_register = (int *)0x400E1A38;
+
+
+// As the name suggests, this function sleeps for a given number of
+// milliseconds. Our replacement for Arduino's delay function.
+void sleep_ms(int milliseconds) {
+	int sleep_until = *timer_value_register + milliseconds;
+	while (*timer_value_register &lt; sleep_until) {}
+}
+
+// The main function. A normal Arduino sketch would have setup and loop
+// functions, which are normally called by Arduino's built-in main
+// function. Our main here replaces all three of these.
+int main() {
+	// Enable PB27 (pin 13) and configure it for output.
+	*pb_pio_enable    = pb27_mask;
+	*pb_output_enable = pb27_mask;
+
+	// Set the timer to a resolution of a millisecond.
+	*timer_mode_register = 0x00000020;
+
+	// Continuously set and clear output on PB27 (pin 13). This blinks
+	// the Due's built-in LED, which is the single purpose of this
+	// program.
+	while (1) {
+		*pb_set_output_data = pb27_mask;
+		sleep_ms(200);
+		*pb_clear_output_data = pb27_mask;
+		sleep_ms(800);
+	}
+}
+			</pre>
+
+			<p>
+				Great, isn't it? All those highly readable function calls have
+				been replaced by low-level fiddling with bits and pointers. Now,
+				I understand that this looks like black magic to anyone who
+				hasn't done this before. Don't worry! It's not really relevant
+				yet, and when the time comes, I'll explain all of it in
+				detail<a class="footnote" href="#note-2">[2]</a>.
+			</p>
+
+			<p>
+				But let's not lose track of what's great about this program: No
+				calls to Arduino functions! No Arduino headers are included!
+				Consequently, the first step of our build process can be
+				radically simplified:
+			</p>
+
+			<pre>
+arm-none-eabi-g++ \
+	-c \
+	-nostdlib \
+	-mcpu=cortex-m3 \
+	-mthumb \
+	blink.c \
+	-o blink.o
+			</pre>
+
+			<p>
+				As you can see, we no longer rely on anything Arduino-specific
+				for this first build step. However, even though the second build
+				step has also been simplified a bit, it's not Arduino-free yet:
+			</p>
+
+			<pre>
+ARDUINO_IDE=&lt;insert path to Arduino IDE&gt;
+ARDUINO_TMP=&lt;insert path of the IDE's temporary build directory&gt;
+
+arm-none-eabi-gcc \
+	-Wl,--gc-sections \
+	-mcpu=cortex-m3 \
+	-T$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/linker_scripts/gcc/flash.ld \
+	-L$ARDUINO_TMP \
+	-mthumb \
+	-Wl,--entry=Reset_Handler \
+	-Wl,--start-group \
+		blink.o \
+		$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/libsam_sam3x8e_gcc_rel.a \
+		$ARDUINO_TMP/core.a \
+	-Wl,--end-group \
+	-lm \
+	-o blink.elf
+			</pre>
+
+			<p>
+				Even though we're no longer calling into the Arduino libraries,
+				there is still Arduino code doing some setting up before our
+				code can run. I'm not sure yet what that entails exactly, but
+				I'm sure I'll figure it
+				out<a class="footnote" href="#note-3">[3]</a>.
+			</p>
+
+			<p>
+				The last build steps (binary conversion and upload) have stayed
+				the same:
+			</p>
+
+			<pre>
+arm-none-eabi-objcopy \
+	-O binary \
+	blink.elf \
+	blink.bin
+
+bossac --write --verify --boot -R blink.bin
+			</pre>
+
+			<p>
+				That's it for today. As always, the full code is available
+				<a href="https://github.com/hannobraun/embedded">on GitHub</a>.
+				See you next time!
+			</p>
+
+			<hr />
+
+			<footer>
+				<a name="note-1"></a>
+				<span class="footnote-number">[1]</span>
+				<p>
+					"Tyranny" might be the wrong word, seeing how I willingly
+					bought one and am now shamelessly reverse-engineering their
+					software to figure out how to get off the ground with this
+					little project.
+				</p>
+
+				<a name="note-2"></a>
+				<span class="footnote-number">[2]</span>
+				<p>
+					If you're really curious and want to read up on all the
+					details, check out the
+					<a href="http://www.atmel.com/devices/SAM3X8E.aspx">Atmel
+					SAM3X8E reference documentation</a>, chapters 13 (for the
+					real-time timer) and 31 (for the parallel I/O).
+				</p>
+
+				<a name="note-3"></a>
+				<span class="footnote-number">[3]</span>
+				<p>
+					A note to any archaeologists that might read this in a
+					thousand years: If this is the last entry, then I probably
+					didn't figure it out.
+				</p>
+			</footer>
+
+			<hr />
+		</main>
+
+		<footer>
+			<p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+		</footer>
+	</body>
+</html>

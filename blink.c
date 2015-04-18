@@ -39,3 +39,56 @@ int main() {
 		sleep_ms(800);
 	}
 }
+
+
+// Those are interrupt handlers. They are set up by remaining Arduino code
+// during initialization. All of these just halt execution.
+void        NMI_Handler() { while (1) {} }
+void  HardFault_Handler() { while (1) {} }
+void  MemManage_Handler() { while (1) {} }
+void   BusFault_Handler() { while (1) {} }
+void UsageFault_Handler() { while (1) {} }
+void        SVC_Handler() { while (1) {} }
+void   DebugMon_Handler() { while (1) {} }
+void     PendSV_Handler() { while (1) {} }
+void    SysTick_Handler() { while (1) {} }
+void       SUPC_Handler() { while (1) {} }
+void       RSTC_Handler() { while (1) {} }
+void        RTC_Handler() { while (1) {} }
+void        RTT_Handler() { while (1) {} }
+void        WDT_Handler() { while (1) {} }
+void        PMC_Handler() { while (1) {} }
+void       EFC0_Handler() { while (1) {} }
+void       EFC1_Handler() { while (1) {} }
+void       UART_Handler() { while (1) {} }
+void        SMC_Handler() { while (1) {} }
+void       PIOA_Handler() { while (1) {} }
+void       PIOB_Handler() { while (1) {} }
+void       PIOC_Handler() { while (1) {} }
+void       PIOD_Handler() { while (1) {} }
+void     USART0_Handler() { while (1) {} }
+void     USART1_Handler() { while (1) {} }
+void     USART2_Handler() { while (1) {} }
+void     USART3_Handler() { while (1) {} }
+void      HSMCI_Handler() { while (1) {} }
+void       TWI0_Handler() { while (1) {} }
+void       TWI1_Handler() { while (1) {} }
+void       SPI0_Handler() { while (1) {} }
+void        SSC_Handler() { while (1) {} }
+void        TC0_Handler() { while (1) {} }
+void        TC1_Handler() { while (1) {} }
+void        TC2_Handler() { while (1) {} }
+void        TC3_Handler() { while (1) {} }
+void        TC4_Handler() { while (1) {} }
+void        TC5_Handler() { while (1) {} }
+void        TC6_Handler() { while (1) {} }
+void        TC7_Handler() { while (1) {} }
+void        TC8_Handler() { while (1) {} }
+void        PWM_Handler() { while (1) {} }
+void        ADC_Handler() { while (1) {} }
+void       DACC_Handler() { while (1) {} }
+void       DMAC_Handler() { while (1) {} }
+void       TRNG_Handler() { while (1) {} }
+void       EMAC_Handler() { while (1) {} }
+void       CAN0_Handler() { while (1) {} }
+void       CAN1_Handler() { while (1) {} }

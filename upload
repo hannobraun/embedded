@@ -20,7 +20,7 @@ ARDUINO_IDE=/home/hanno/Downloads/arduino-1.7.0-linux64
 # From here on out, the script *should* work without system-specific
 # modifications.
 
-arm-none-eabi-g++ \
+arm-none-eabi-gcc \
 	-c \
 	-nostdlib \
 	-mcpu=cortex-m3 \

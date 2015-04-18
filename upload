@@ -39,7 +39,6 @@ arm-none-eabi-gcc \
 		blink.o \
 		$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/libsam_sam3x8e_gcc_rel.a \
 	-Wl,--end-group \
-	-lm \
 	-o blink.elf &&
 
 arm-none-eabi-objcopy \

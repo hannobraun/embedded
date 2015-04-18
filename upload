@@ -37,7 +37,7 @@ arm-none-eabi-gcc \
 	-Wl,--entry=Reset_Handler \
 	-Wl,--start-group \
 		blink.o \
-		$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/libsam_sam3x8e_gcc_rel.a \
+		libsam_sam3x8e_gcc_rel.a \
 	-Wl,--end-group \
 	-o blink.elf &&
 

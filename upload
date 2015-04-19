@@ -6,20 +6,6 @@
 # Just make sure to press the tiny "Erase" button on the Arduino Due before
 # uploading and everything should work.
 
-# ATTENTION 2:
-# This build script requires an installation of the Arduino IDE. Please make
-# sure you have a recent version installed and add its path to the ARDUINO_IDE
-# variable below.
-
-# The following variables need to be modified for your system before the build
-# can work.
-
-# Installation directory of the Arduino IDE
-ARDUINO_IDE=/home/hanno/Downloads/arduino-1.7.0-linux64
-
-# From here on out, the script *should* work without system-specific
-# modifications.
-
 arm-none-eabi-gcc \
 	-c \
 	-nostdlib \
@@ -31,7 +17,7 @@ arm-none-eabi-gcc \
 arm-none-eabi-gcc \
 	-Wl,--gc-sections \
 	-mcpu=cortex-m3 \
-	-T$ARDUINO_IDE/hardware/arduino/sam/variants/arduino_due_x/linker_scripts/gcc/flash.ld \
+	-Tlinker-script.ld \
 	-L. \
 	-mthumb \
 	-Wl,--entry=Reset_Handler \

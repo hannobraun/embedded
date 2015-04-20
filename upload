@@ -20,10 +20,8 @@ arm-none-eabi-gcc \
 	-Tlinker-script.ld \
 	-mthumb \
 	-Wl,--entry=Reset_Handler \
-	-Wl,--start-group \
-		blink.o \
-		libsam_sam3x8e_gcc_rel.a \
-	-Wl,--end-group \
+	blink.o \
+	libsam_sam3x8e_gcc_rel.a \
 	-o blink.elf &&
 
 arm-none-eabi-objcopy \

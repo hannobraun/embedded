@@ -8,10 +8,10 @@
 
 arm-none-eabi-gcc \
 	-nostdlib \
-	-Wl,--gc-sections \
 	-mcpu=cortex-m3 \
-	-Tlinker-script.ld \
 	-mthumb \
+	-Wl,--gc-sections \
+	-Tlinker-script.ld \
 	-Wl,--entry=Reset_Handler \
 	blink.c \
 	libsam_sam3x8e_gcc_rel.a \

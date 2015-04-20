@@ -7,20 +7,13 @@
 # uploading and everything should work.
 
 arm-none-eabi-gcc \
-	-c \
 	-nostdlib \
-	-mcpu=cortex-m3 \
-	-mthumb \
-	blink.c \
-	-o blink.o &&
-
-arm-none-eabi-gcc \
 	-Wl,--gc-sections \
 	-mcpu=cortex-m3 \
 	-Tlinker-script.ld \
 	-mthumb \
 	-Wl,--entry=Reset_Handler \
-	blink.o \
+	blink.c \
 	libsam_sam3x8e_gcc_rel.a \
 	-o blink.elf &&
 

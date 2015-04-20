@@ -18,7 +18,6 @@ arm-none-eabi-gcc \
 	-Wl,--gc-sections \
 	-mcpu=cortex-m3 \
 	-Tlinker-script.ld \
-	-L. \
 	-mthumb \
 	-Wl,--entry=Reset_Handler \
 	-Wl,--start-group \

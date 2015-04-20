@@ -10,7 +10,6 @@ arm-none-eabi-gcc \
 	-nostdlib \
 	-mcpu=cortex-m3 \
 	-mthumb \
-	-Wl,--gc-sections \
 	-Tlinker-script.ld \
 	-Wl,--entry=Reset_Handler \
 	blink.c \

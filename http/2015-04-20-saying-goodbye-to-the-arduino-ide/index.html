@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>embedded.hannobraun.de</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+	</head>
+
+	<body>
+		<main>
+			<p class="date">2015-04-20</p>
+			<h1>Saying Goodby to the Arduino IDE</h1>
+
+			<p>
+				<a href="/2015-04-13-getting-rid-of-the-arduino-libraries">Last
+				time</a>, we got rid of the Arduino libraries and instead talked
+				to the hardware directly. We were still including some Arduino
+				code in our program, however, and we relied on the Arduino IDE
+				for building our program. All of this is changing today, so
+				prepare to say goodby to Arduino!
+			</p>
+
+			<p>
+				First, we need to add a few things to our program:
+			</p>
+
+			<pre>
+// blink.c
+
+// Addresses of several registers used to control parallel I/O.
+volatile int *pb_pio_enable          = (int *)0x400E1000;
+volatile int *pb_output_enable       = (int *)0x400E1010;
+volatile int *pb_set_output_data     = (int *)0x400E1030;
+volatile int *pb_clear_output_data   = (int *)0x400E1034;
+
+// Bit mask for PB27. This is pin 13 (the built-in LED) on the Arduino Due.
+int pb27_mask = 0x08000000;
+
+// Addresses of several registers used to control the real-time timer.
+volatile int *timer_mode_register  = (int *)0x400E1A30;
+volatile int *timer_value_register = (int *)0x400E1A38;
+
+
+// As the name suggests, this function sleeps for a given number of
+// milliseconds. Our replacement for Arduino's delay function.
+void sleep_ms(int milliseconds) {
+	int sleep_until = *timer_value_register + milliseconds;
+	while (*timer_value_register &lt; sleep_until) {}
+}
+
+// The main function. A normal Arduino sketch would have setup and loop
+// functions, which are normally called by Arduino's built-in main
+// function. Our main here replaces all three of these.
+int main() {
+	// Enable PB27 (pin 13) and configure it for output.
+	*pb_pio_enable    = pb27_mask;
+	*pb_output_enable = pb27_mask;
+
+	// Set the timer to a resolution of a millisecond.
+	*timer_mode_register = 0x00000020;
+
+	// Continuously set and clear output on PB27 (pin 13). This blinks
+	// the Due's built-in LED, which is the single purpose of this
+	// program.
+	while (1) {
+		*pb_set_output_data = pb27_mask;
+		sleep_ms(200);
+		*pb_clear_output_data = pb27_mask;
+		sleep_ms(800);
+	}
+}
+
+
+// Those are interrupt handlers. They are set up by remaining Arduino code
+// during initialization. All of these just halt execution.
+void        NMI_Handler() { while (1) {} }
+void  HardFault_Handler() { while (1) {} }
+void  MemManage_Handler() { while (1) {} }
+void   BusFault_Handler() { while (1) {} }
+void UsageFault_Handler() { while (1) {} }
+void        SVC_Handler() { while (1) {} }
+void   DebugMon_Handler() { while (1) {} }
+void     PendSV_Handler() { while (1) {} }
+void    SysTick_Handler() { while (1) {} }
+void       SUPC_Handler() { while (1) {} }
+void       RSTC_Handler() { while (1) {} }
+void        RTC_Handler() { while (1) {} }
+void        RTT_Handler() { while (1) {} }
+void        WDT_Handler() { while (1) {} }
+void        PMC_Handler() { while (1) {} }
+void       EFC0_Handler() { while (1) {} }
+void       EFC1_Handler() { while (1) {} }
+void       UART_Handler() { while (1) {} }
+void        SMC_Handler() { while (1) {} }
+void       PIOA_Handler() { while (1) {} }
+void       PIOB_Handler() { while (1) {} }
+void       PIOC_Handler() { while (1) {} }
+void       PIOD_Handler() { while (1) {} }
+void     USART0_Handler() { while (1) {} }
+void     USART1_Handler() { while (1) {} }
+void     USART2_Handler() { while (1) {} }
+void     USART3_Handler() { while (1) {} }
+void      HSMCI_Handler() { while (1) {} }
+void       TWI0_Handler() { while (1) {} }
+void       TWI1_Handler() { while (1) {} }
+void       SPI0_Handler() { while (1) {} }
+void        SSC_Handler() { while (1) {} }
+void        TC0_Handler() { while (1) {} }
+void        TC1_Handler() { while (1) {} }
+void        TC2_Handler() { while (1) {} }
+void        TC3_Handler() { while (1) {} }
+void        TC4_Handler() { while (1) {} }
+void        TC5_Handler() { while (1) {} }
+void        TC6_Handler() { while (1) {} }
+void        TC7_Handler() { while (1) {} }
+void        TC8_Handler() { while (1) {} }
+void        PWM_Handler() { while (1) {} }
+void        ADC_Handler() { while (1) {} }
+void       DACC_Handler() { while (1) {} }
+void       DMAC_Handler() { while (1) {} }
+void       TRNG_Handler() { while (1) {} }
+void       EMAC_Handler() { while (1) {} }
+void       CAN0_Handler() { while (1) {} }
+void       CAN1_Handler() { while (1) {} }
+			</pre>
+
+			<p>
+				The first part hasn't changed, but I've added a lot of functions
+				at the end. Those are handler functions for various interrupts.
+				We'll talk about where all those function names come from in a
+				moment (and we'll talk a lot about interrupts in later
+				articles), but for now, you just have to understand this:
+				Interrupts can occur due to various events and when they do, one
+				of these handler functions can be called. All of the handlers do
+				the same, which is basically
+				nothing<a class="footnote" href="#note-1">[1]</a>.
+			</p>
+
+			<p>
+				Implementing those handlers allows us to drop the rest of the
+				Arduino libraries. First, here's the first build step that
+				compiles our program. It is almost unchanged:
+			</p>
+
+			<pre>
+arm-none-eabi-gcc \
+	-c \
+	-nostdlib \
+	-mcpu=cortex-m3 \
+	-mthumb \
+	blink.c \
+	-o blink.o
+			</pre>
+
+			<p>
+				The only change was to replace <code>arm-none-eabi-g++</code>
+				with <code>arm-none-eabi-gcc</code>. If we don't do this, the
+				program is compiled as a C++ program which mangles the names of
+				all the handler functions, meaning the linker would no longer be
+				able to find them.
+			</p>
+
+			<p>
+				The second build step, which links the executable has been
+				simplified and no longer relies on the Arduino IDE:
+			</p>
+
+			<pre>
+arm-none-eabi-gcc \
+	-Wl,--gc-sections \
+	-mcpu=cortex-m3 \
+	-Tlinker-script.ld \
+	-L. \
+	-mthumb \
+	-Wl,--entry=Reset_Handler \
+	-Wl,--start-group \
+		blink.o \
+		libsam_sam3x8e_gcc_rel.a \
+	-Wl,--end-group \
+	-o blink.elf
+			</pre>
+
+			<p>
+				Attentive readers will notice that there are still two files
+				being included. The first is a linker script
+				(<code>linker-script.ld</code>), which tells the linker the
+				things it needs to know about the specific hardware on the
+				Arduino Due<a class="footnote" href="#note-2">[2]</a>. I've
+				<a href="https://github.com/hannobraun/embedded/blob/master/linker-script.ld">
+				added it to the GitHub repository</a>.
+			</p>
+
+			<p>
+				The second is a library (<code>libsam_sam3x8e_gcc_rel.a</code>)
+				that came with the Arduino IDE, but doesn't seem to be
+				Arduino-specific. Rather, I think it belongs to the
+				<a href="http://asf.atmel.com/docs/latest/">Atmel Software
+				Framework</a><a class="footnote" href="#note-3">[3]</a>. In
+				there, the last bits of initialization code are still hiding.
+			</p>
+
+			<p>
+				The rest of the build process is, again, unchanged:
+			</p>
+
+			<pre>
+arm-none-eabi-objcopy \
+	-O binary \
+	blink.elf \
+	blink.bin
+
+bossac --write --verify --boot -R blink.bin
+			</pre>
+
+			<p>
+				Please don't forget that you have to press the
+				<code>ERASE</code> button on the Due before attempting to upload
+				the program.
+			</p>
+
+			<p>
+				So, another small but important step towards fully controlling
+				what happens on the hardware. For the first time, someone can
+				clone my <a href="https://github.com/hannobraun/embedded">GitHub
+				repository</a>, build the program and upload it to the board
+				without having to install the Arduino IDE. The only thing left
+				now is to replace 
+			</p>
+
+			<p>
+				That's it for today. As always, the full code is available
+				<a href="https://github.com/hannobraun/embedded">on GitHub</a>.
+				See you next time!
+			</p>
+
+			<hr />
+
+			<footer>
+				<a name="note-1"></a>
+				<span class="footnote-number">[1]</span>
+				<p>
+					In a normal program, you would just exit if there's an error
+					that you can't or don't want to handle. With embedded code
+					that runs directly on the hardware, <em>exiting the
+					program</em> is not a concept that makes any sense, as
+					there's no operating system that could pick up where the
+					exiting program left off.
+				</p>
+
+				<p>
+					That's why all those interrupt handler functions contain an
+					endless loop that never exits, as this effectively stops all
+					operation until someone restarts the board or uploads
+					another program.
+				</p>
+
+				<a name="note-2"></a>
+				<span class="footnote-number">[2]</span>
+				<p>
+					To be honest, I don't quite understand everything that's
+					going on in that linker script. Although I may revisit this
+					at some point in the future, I'm fine with it for now. While
+					I want full control over what's happening on the board, I
+					don't have a lot of drive to understand all the details of
+					the build process, beyond what's immediately useful to me.
+				</p>
+
+				<a name="note-3"></a>
+				<span class="footnote-number">[3]</span>
+				<p>
+					<a href="http://www.atmel.com/">Atmel</a> is the
+					manufacturer of the SAM3X8E SoC (system on chip) that forms
+					the basis of the Arduino Due. They provide software to help
+					programmers work with their hardware and Arduino uses some
+					of it to build its own stuff on top.
+				</p>
+			</footer>
+
+			<hr />
+		</main>
+
+		<footer>
+			<p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+		</footer>
+	</body>
+</html>

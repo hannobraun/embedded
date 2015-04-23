@@ -14,14 +14,14 @@
 			<p>
 				<a href="/2015-04-13-getting-rid-of-the-arduino-libraries">Last
 				time</a>, we got rid of the Arduino libraries and started
-				talking to the hardware directly. We were still including some
-				Arduino code in our program, however, and we relied on the
-				Arduino IDE for building our program. All of this is changing
+				talking to the hardware directly. However, we were still
+				including some Arduino code in our program, and we relied on the
+				Arduino IDE for our build process. All of this is changing
 				today, so prepare to say goodby to Arduino!
 			</p>
 
 			<p>
-				First, we need to add a few lines to our program:
+				First, we need to add a few lines of code to our program:
 			</p>
 
 			<pre>
@@ -157,8 +157,8 @@ arm-none-eabi-gcc \
 			<p>
 				Attentive readers will notice that there are still two files
 				being included. The first is a linker script
-				(<code>linker-script.ld</code>), which tells the linker the
-				things it needs to know about the specific hardware on the
+				(<code>linker-script.ld</code>), which tells the linker
+				everything it needs to know about the specific hardware of the
 				Arduino Due<a class="footnote" href="#note-2">[2]</a>. I've
 				<a href="https://github.com/hannobraun/embedded/blob/master/linker-script.ld">
 				added it to the GitHub repository</a>.
@@ -217,14 +217,14 @@ bossac --write --verify --boot -R blink.bin
 					that you can't or don't want to handle. With embedded code
 					that runs directly on the hardware, <em>exiting the
 					program</em> is not a concept that makes any sense, as
-					there's no operating system that could pick up where the
+					there's no operating system that could pick up where your
 					program left off.
 				</p>
 
 				<p>
 					That's why all those interrupt handler functions contain an
-					endless loop, as this effectively stops all operation until
-					someone restarts the board or uploads another program.
+					endless loop. This effectively stops all operation until
+					someone resets the board or uploads another program.
 				</p>
 
 				<a name="note-2"></a>
@@ -233,9 +233,10 @@ bossac --write --verify --boot -R blink.bin
 					To be honest, I don't quite understand everything that's
 					going on in that linker script. Although I may revisit this
 					at some point in the future, I'm fine with it for now. While
-					I want full control over what's happening on the board, I
-					don't have a lot of drive to understand all the details of
-					the build process, beyond what's immediately useful to me.
+					I want full control over what's happening on the board
+					itself, I don't have a lot of drive to understand all the
+					details of the build process beyond what's immediately
+					useful to me.
 				</p>
 
 				<a name="note-3"></a>
@@ -244,7 +245,7 @@ bossac --write --verify --boot -R blink.bin
 					<a href="http://www.atmel.com/">Atmel</a> is the
 					manufacturer of the SAM3X8E SoC (system on chip) that forms
 					the basis of the Arduino Due. They provide software to help
-					programmers work with their hardware Arduino uses that and
+					programmers work with their hardware. Arduino use that and
 					build their own stuff on top.
 				</p>
 			</footer>

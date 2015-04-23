@@ -13,15 +13,15 @@
 
 			<p>
 				<a href="/2015-04-13-getting-rid-of-the-arduino-libraries">Last
-				time</a>, we got rid of the Arduino libraries and instead talked
-				to the hardware directly. We were still including some Arduino
-				code in our program, however, and we relied on the Arduino IDE
-				for building our program. All of this is changing today, so
-				prepare to say goodby to Arduino!
+				time</a>, we got rid of the Arduino libraries and started
+				talking to the hardware directly. We were still including some
+				Arduino code in our program, however, and we relied on the
+				Arduino IDE for building our program. All of this is changing
+				today, so prepare to say goodby to Arduino!
 			</p>
 
 			<p>
-				First, we need to add a few things to our program:
+				First, we need to add a few lines to our program:
 			</p>
 
 			<pre>
@@ -128,8 +128,8 @@ void       CAN1_Handler() { while (1) {} }
 				The first part hasn't changed, but I've added a lot of functions
 				at the end. Those are handler functions for various interrupts.
 				We'll talk about where all those function names come from in a
-				moment (and we'll talk a lot about interrupts in later
-				articles), but for now, you just have to understand this:
+				moment (and in later articles we'll talk a lot about interrupts
+				in general), but for now, you just have to understand this:
 				Interrupts can occur due to various events and when they do, one
 				of these handler functions can be called. All of the handlers do
 				the same, which is basically
@@ -138,45 +138,19 @@ void       CAN1_Handler() { while (1) {} }
 
 			<p>
 				Implementing those handlers allows us to drop the rest of the
-				Arduino libraries. First, here's the first build step that
-				compiles our program. It is almost unchanged:
+				Arduino libraries and simplify our build process significantly.
+				The two compile steps have been merged into one:
 			</p>
 
 			<pre>
 arm-none-eabi-gcc \
-	-c \
 	-nostdlib \
 	-mcpu=cortex-m3 \
 	-mthumb \
-	blink.c \
-	-o blink.o
-			</pre>
-
-			<p>
-				The only change was to replace <code>arm-none-eabi-g++</code>
-				with <code>arm-none-eabi-gcc</code>. If we don't do this, the
-				program is compiled as a C++ program which mangles the names of
-				all the handler functions, meaning the linker would no longer be
-				able to find them.
-			</p>
-
-			<p>
-				The second build step, which links the executable has been
-				simplified and no longer relies on the Arduino IDE:
-			</p>
-
-			<pre>
-arm-none-eabi-gcc \
-	-Wl,--gc-sections \
-	-mcpu=cortex-m3 \
 	-Tlinker-script.ld \
-	-L. \
-	-mthumb \
 	-Wl,--entry=Reset_Handler \
-	-Wl,--start-group \
-		blink.o \
-		libsam_sam3x8e_gcc_rel.a \
-	-Wl,--end-group \
+	blink.c \
+	libsam_sam3x8e_gcc_rel.a \
 	-o blink.elf
 			</pre>
 
@@ -196,7 +170,8 @@ arm-none-eabi-gcc \
 				Arduino-specific. Rather, I think it belongs to the
 				<a href="http://asf.atmel.com/docs/latest/">Atmel Software
 				Framework</a><a class="footnote" href="#note-3">[3]</a>. In
-				there, the last bits of initialization code are still hiding.
+				there, the last bits of initialization code that I have yet to
+				replace are still hiding.
 			</p>
 
 			<p>
@@ -221,10 +196,9 @@ bossac --write --verify --boot -R blink.bin
 			<p>
 				So, another small but important step towards fully controlling
 				what happens on the hardware. For the first time, someone can
-				clone my <a href="https://github.com/hannobraun/embedded">GitHub
+				clone my <a href="https://github.com/hannobraun/embedded">Git
 				repository</a>, build the program and upload it to the board
-				without having to install the Arduino IDE. The only thing left
-				now is to replace 
+				without having to install the Arduino IDE.
 			</p>
 
 			<p>
@@ -239,19 +213,18 @@ bossac --write --verify --boot -R blink.bin
 				<a name="note-1"></a>
 				<span class="footnote-number">[1]</span>
 				<p>
-					In a normal program, you would just exit if there's an error
+					In a normal program, you could just exit if there's an error
 					that you can't or don't want to handle. With embedded code
 					that runs directly on the hardware, <em>exiting the
 					program</em> is not a concept that makes any sense, as
 					there's no operating system that could pick up where the
-					exiting program left off.
+					program left off.
 				</p>
 
 				<p>
 					That's why all those interrupt handler functions contain an
-					endless loop that never exits, as this effectively stops all
-					operation until someone restarts the board or uploads
-					another program.
+					endless loop, as this effectively stops all operation until
+					someone restarts the board or uploads another program.
 				</p>
 
 				<a name="note-2"></a>
@@ -271,8 +244,8 @@ bossac --write --verify --boot -R blink.bin
 					<a href="http://www.atmel.com/">Atmel</a> is the
 					manufacturer of the SAM3X8E SoC (system on chip) that forms
 					the basis of the Arduino Due. They provide software to help
-					programmers work with their hardware and Arduino uses some
-					of it to build its own stuff on top.
+					programmers work with their hardware Arduino uses that and
+					build their own stuff on top.
 				</p>
 			</footer>
 

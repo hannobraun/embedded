@@ -19,6 +19,10 @@ void sleep_ms(int milliseconds) {
 	while (*timer_value_register < sleep_until) {}
 }
 
+void start() {
+	Reset_Handler();
+}
+
 // The main function. A normal Arduino sketch would have setup and loop
 // functions, which are normally called by Arduino's built-in main function. Our
 // main here replaces all three of these.

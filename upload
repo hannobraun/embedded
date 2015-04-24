@@ -11,7 +11,7 @@ arm-none-eabi-gcc \
 	-mcpu=cortex-m3 \
 	-mthumb \
 	-Tlinker-script.ld \
-	-Wl,--entry=Reset_Handler \
+	-Wl,--entry=start \
 	blink.c \
 	libsam_sam3x8e_gcc_rel.a \
 	-o blink.elf &&

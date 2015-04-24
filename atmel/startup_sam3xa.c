@@ -27,7 +27,7 @@
  * ----------------------------------------------------------------------------
  */
 
-#include "sam3xa.h"
+#include "sam3x8e.h"
 
 /* Initialize segments */
 extern uint32_t _sfixed;

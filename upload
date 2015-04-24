@@ -12,7 +12,6 @@ arm-none-eabi-gcc \
 	-mthumb \
 	-Tlinker-script.ld \
 	-Wl,--entry=start \
-	-D__SAM3X8E__ \
 	-Iatmel \
 	blink.c \
 	atmel/startup_sam3xa.c \

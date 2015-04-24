@@ -29,6 +29,8 @@
 
 #include "sam3x8e.h"
 
+typedef unsigned int uint32_t;
+
 /* Initialize segments */
 extern uint32_t _sfixed;
 extern uint32_t _efixed;

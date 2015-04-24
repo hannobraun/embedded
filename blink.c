@@ -96,3 +96,4 @@ void       TRNG_Handler() { while (1) {} }
 void       EMAC_Handler() { while (1) {} }
 void       CAN0_Handler() { while (1) {} }
 void       CAN1_Handler() { while (1) {} }
+void     UOTGHS_Handler() { while (1) {} }

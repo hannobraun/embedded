@@ -244,57 +244,6 @@ void USART2_Handler     ( void );
 void USART3_Handler     ( void );
 void WDT_Handler        ( void );
 
-/**
- * \brief Configuration of the Cortex-M3 Processor and Core Peripherals
- */
-
-#define __CM3_REV              0x0200 /**< SAM3X8E core revision number ([15:8] revision number, [7:0] patch number) */
-#define __MPU_PRESENT          1      /**< SAM3X8E does provide a MPU */
-#define __NVIC_PRIO_BITS       4      /**< SAM3X8E uses 4 Bits for the Priority Levels */
-#define __Vendor_SysTickConfig 0      /**< Set to 1 if different SysTick Config is used */
-
-/*@}*/
-
-/* ************************************************************************** */
-/*   MEMORY MAPPING DEFINITIONS FOR SAM3X8E */
-/* ************************************************************************** */
-
-#define IFLASH0_SIZE             (0x40000u)
-#define IFLASH0_PAGE_SIZE        (256u)
-#define IFLASH0_LOCK_REGION_SIZE (16384u)
-#define IFLASH0_NB_OF_PAGES      (1024u)
-#define IFLASH1_SIZE             (0x40000u)
-#define IFLASH1_PAGE_SIZE        (256u)
-#define IFLASH1_LOCK_REGION_SIZE (16384u)
-#define IFLASH1_NB_OF_PAGES      (1024u)
-#define IRAM0_SIZE               (0x10000u)
-#define IRAM1_SIZE               (0x8000u)
-#define NFCRAM_SIZE              (0x1000u)
-#define IFLASH_SIZE              (IFLASH0_SIZE+IFLASH1_SIZE)
-#define IRAM_SIZE                (IRAM0_SIZE+IRAM1_SIZE)
-
-#define IFLASH0_ADDR    (0x00080000u) /**< Internal Flash 0 base address */
-#if defined IFLASH0_SIZE
-#define IFLASH1_ADDR    (IFLASH0_ADDR+IFLASH0_SIZE) /**< Internal Flash 1 base address */
-#endif
-#define IROM_ADDR       (0x00100000u) /**< Internal ROM base address */
-#define IRAM0_ADDR      (0x20000000u) /**< Internal RAM 0 base address */
-#define IRAM1_ADDR      (0x20080000u) /**< Internal RAM 1 base address */
-#define NFC_RAM_ADDR    (0x20100000u) /**< NAND Flash Controller RAM base address */
-#define UOTGHS_RAM_ADDR (0x20180000u) /**< USB On-The-Go Interface RAM base address */
-#define EBI_CS0_ADDR    (0x60000000u) /**< EBI Chip Select 0 base address */
-#define EBI_CS1_ADDR    (0x61000000u) /**< EBI Chip Select 1 base address */
-#define EBI_CS2_ADDR    (0x62000000u) /**< EBI Chip Select 2 base address */
-#define EBI_CS3_ADDR    (0x63000000u) /**< EBI Chip Select 3 base address */
-#define EBI_CS4_ADDR    (0x64000000u) /**< EBI Chip Select 4 base address */
-#define EBI_CS5_ADDR    (0x65000000u) /**< EBI Chip Select 5 base address */
-#define EBI_CS6_ADDR    (0x66000000u) /**< EBI Chip Select 6 base address */
-#define EBI_CS7_ADDR    (0x67000000u) /**< EBI Chip Select 7 base address */
-
-#ifdef __cplusplus
-}
-#endif
-
 /*@}*/
 
 #endif /* _SAM3X8E_ */

@@ -19,14 +19,9 @@ void sleep_ms(int milliseconds) {
 	while (*timer_value_register < sleep_until) {}
 }
 
+// This function is the entry point for our application and the handler function
+// for the reset interrupt.
 void start() {
-	main();
-}
-
-// The main function. A normal Arduino sketch would have setup and loop
-// functions, which are normally called by Arduino's built-in main function. Our
-// main here replaces all three of these.
-int main() {
 	// Enable PB27 (pin 13) and configure it for output.
 	*pb_pio_enable    = pb27_mask;
 	*pb_output_enable = pb27_mask;

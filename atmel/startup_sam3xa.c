@@ -43,7 +43,7 @@ extern uint32_t _sstack;
 extern uint32_t _estack;
 
 /** \cond DOXYGEN_SHOULD_SKIP_THIS */
-int main(void);
+void start(void);
 /** \endcond */
 
 // Arduino: we must setup hardware before doing this
@@ -57,18 +57,5 @@ const DeviceVectors exception_table = {
 
 	/* Configure Initial Stack Pointer, using linker-generated symbols */
 	(void*) (&_estack),
-	(void*) Reset_Handler,
+	(void*) start,
 };
-
-/**
- * \brief This is the code that gets called on processor reset.
- * To initialize the device, and call the main() routine.
- */
-void Reset_Handler(void)
-{
-	/* Branch to main function */
-	main();
-
-	/* Infinite loop */
-	while (1);
-}

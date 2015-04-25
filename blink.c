@@ -20,7 +20,7 @@ void sleep_ms(int milliseconds) {
 }
 
 void start() {
-	Reset_Handler();
+	main();
 }
 
 // The main function. A normal Arduino sketch would have setup and loop

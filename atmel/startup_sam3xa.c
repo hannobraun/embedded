@@ -66,18 +66,6 @@ const DeviceVectors exception_table = {
  */
 void Reset_Handler(void)
 {
-	uint32_t *pSrc, *pDest;
-
-	/* Initialize the relocate segment */
-	pSrc = &_etext;
-	pDest = &_srelocate;
-
-	if (pSrc != pDest) {
-		for (; pDest < &_erelocate;) {
-			*pDest++ = *pSrc++;
-		}
-	}
-
 	/* Branch to main function */
 	main();
 

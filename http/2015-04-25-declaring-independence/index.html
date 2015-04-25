@@ -22,11 +22,11 @@
 			</p>
 
 			<p>
-				Before I knew how exactly that program would have to look, I
-				needed to find out what exactly that third-party library
-				(<code>libsam_sam3x8e_gcc_rel.a</code>) was and how it worked.
-				The only clue I had to go on was the entry point of the binary
-				we were building, <code>Reset_Handler</code>.
+				Before I knew how to achieve that, I needed to find out what
+				exactly that third-party library
+				(<code>libsam_sam3x8e_gcc_rel.a</code>) was doing. The only clue
+				I had to go on was the entry point of our binary,
+				<code>Reset_Handler</code>.
 			</p>
 
 			<p>
@@ -37,16 +37,17 @@
 				from a file named <code>startup_sam3xa.o</code>. All the
 				sections coming from other object files looked, by their names,
 				like functions for accessing the hardware. Since I knew I was
-				using none of those, I guessed that anything other than
-				<code>startup_sam3xa.o</code> was irrelevant and could be
-				ignored.
+				using none of those, I guessed that those other object files
+				were irrelevant and could be ignored.
 			</p>
 
 			<p>
-				My second guess was that the Arduino repository would have the
-				source code for the library. A bit of digging turned up five
-				different files named <code>startup_sam3xa.c</code>. A bit of
-				detective work then helped me figure out which one was right:
+				I also guessed that the
+				<a href="https://github.com/arduino/Arduino">Arduino
+				repository</a> would have the source code for the library. A bit
+				of digging turned up five different files named
+				<code>startup_sam3xa.c</code>. Some detective work then helped
+				figure out which one was the right one:
 			</p>
 
 			<ul>
@@ -59,8 +60,9 @@
 				</li>
 				<li>
 					Most of the files contained a call to
-					<code>__libc_init_array</code>, a libc initialization
-					function. Since we don't include libc, those were ruled out.
+					<code>__libc_init_array</code>, which looks like it belongs
+					to libc. Since we don't include that, those files could be
+					ruled out.
 				</li>
 			</ul>
 
@@ -76,9 +78,9 @@
 			</p>
 
 			<p>
-				Eventually I was able to integrate everything that was needed
-				into <code>blink.c</code>. Let's look at what the file looks
-				like now, part by part:
+				Eventually I was able to integrate what remained into
+				<code>blink.c</code>. Let's look at what the file looks like
+				now, part by part:
 			</p>
 
 			<pre>
@@ -118,11 +120,11 @@ const VectorTable vector_table = {
 			</pre>
 
 			<p>
-				Here we set up the vector table. When different things happen,
-				for example an external I/O signal or the system being reset,
+				Here we set up the vector table. When various things happen,
+				for example an external I/O signal, or the system being reset,
 				this can lead to an interrupt. An interrupt, as the name
-				suggests, interrupts the normal execution of code. Instead, a
-				handler function for that specific interrupt is called.
+				suggests, interrupts the normal execution of code and calls a
+				handler function for that specific case.
 			</p>
 
 			<p>
@@ -154,27 +156,13 @@ static volatile int * const timer_value_register = (int *)0x400E1A38;
 
 			<p>
 				This is about the same as before, with one crucial difference:
-				Previously, those have been global variables, now they're
+				Previously, those have been global variables. Now they are
 				constants. The difference is important, as global variables end
 				up in a section of the executable called <code>.data</code>,
 				while constants go into <code>.rodata</code>. The contents of
 				the <code>.data</code> section require some special handling,
 				which I've omitted for
 				now<a class="footnote" href="#note-4">[4]</a>.
-			</p>
-
-			<p>
-				The second is a library (<code>libsam_sam3x8e_gcc_rel.a</code>)
-				that came with the Arduino IDE, but doesn't seem to be
-				Arduino-specific. Rather, I think it belongs to the
-				<a href="http://asf.atmel.com/docs/latest/">Atmel Software
-				Framework</a><a class="footnote" href="#note-3">[3]</a>. In
-				there, the last bits of initialization code that I have yet to
-				replace are still hiding.
-			</p>
-
-			<p>
-				The rest of the build process is, again, unchanged:
 			</p>
 
 			<pre>
@@ -216,12 +204,12 @@ void start() {
 
 			<p>
 				There's a very important thing to note here: As I've mentioned
-				ago, I've omitted some very important pieces of initialization
+				above, I've omitted some very important pieces of initialization
 				code. We happen to get away with this, because this program
-				doesn't use any global variables. I've added 
-				to <a href="https://github.com/hannobraun/embedded/blob/606e96cf208ef2eab04c6e2fa6dc616c2e8b840a/blink.c#L58">extensive
+				doesn't use any global variables. I've added two
+				<a href="https://github.com/hannobraun/embedded/blob/606e96cf208ef2eab04c6e2fa6dc616c2e8b840a/blink.c#L58">extensive
 				comments</a> to the full version of the file, so check those out
-				if you're interested in the details of my reasons.
+				if you're interested in the details of my reasoning.
 			</p>
 
 			<p>
@@ -254,7 +242,7 @@ bossac --write --verify --boot -R blink.bin
 			</p>
 
 			<p>
-				One nice detail I want to mention before closing up this
+				There's one nice detail I want to mention before closing up this
 				article. Here's what <code>bossac</code> printed when we
 				<a href="/2015-04-11-manually-uploading-the-program">first used
 				it to upload the program</a>:
@@ -289,7 +277,7 @@ CPU reset.
 			<p>
 				Yes, you're reading that right. Even though the program does the
 				same as it did before, blinking the LED, the size has been
-				reduced by 97%! Of course, it will all be downhill from here.
+				reduced by 97%! Of course, it will all go downhill from here.
 				The program is bound to grow again, as we build up our own
 				abstractions to access the hardware.
 			</p>
@@ -359,17 +347,17 @@ CPU reset.
 				<p>
 					When you define a global variable with an initial value,
 					that initial value has to be part of your executable, so it
-					is available at runtime. But what if you want to assign a
-					new value to the variable? I'm not sure what the situation
+					can be available at runtime. But what if you want to assign
+					a new value to the variable? I'm not sure what the situation
 					is on desktop platforms, but the SAM3X8E has a separate
 					program memory where the program is executed from. You can
 					hardly just write the new value there, or future instances
 					of your program would be started with the new value instead
-					of the initial one you wrote in your source code.
+					of the initial one you defined in your source code.
 				</p>
 
 				<p>
-					The solution is actually pretty straight-forward: Some peace
+					The solution is actually pretty straight-forward: Some piece
 					of code has to copy those global variables into RAM at the
 					start of the program. The linker makes sure all parts of
 					your program that use the global variables will know about

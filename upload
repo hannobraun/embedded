@@ -12,9 +12,7 @@ arm-none-eabi-gcc \
 	-mthumb \
 	-Tlinker-script.ld \
 	-Wl,--entry=start \
-	-Iatmel \
 	blink.c \
-	atmel/startup_sam3xa.c \
 	-o blink.elf &&
 
 arm-none-eabi-objcopy \

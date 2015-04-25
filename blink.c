@@ -1,3 +1,36 @@
+// This is the top of the stack, as provided to us by the linker.
+extern unsigned int _estack;
+
+
+// This is a partial definition of the vector table. It only defines the first
+// two entries which, as far as I can tell, are the minimum needed for a program
+// to work at all.
+// Space for the other interrupt handlers is reserved. I'm not sure if this is
+// necessary, but I can imagine that the vector table not having the right
+// length could cause all kinds of problems (imagine if it was too short, and
+// the linker would place something else directly after it).
+typedef struct {
+	void *initial_stack_pointer_value;
+	void *reset_handler;
+
+	char other_interrupt_vectors[44 * 4]; // space for 44 32-bit pointers
+} VectorTable;
+
+
+void start();
+
+
+// The vector table. We're using GCC-specific functionality to place this into
+// the .vectors section, not where it would normally go (I suppose .rodata).
+// The linker script makes sure that the .vectors section is at the right place.
+__attribute__ ((section(".vectors")))
+const VectorTable vector_table = {
+	(void *)(&_estack),
+	(void *)start,
+};
+
+
+
 // Addresses of several registers used to control parallel I/O.
 static volatile int * const pb_pio_enable          = (int *)0x400E1000;
 static volatile int * const pb_output_enable       = (int *)0x400E1010;

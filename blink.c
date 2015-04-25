@@ -1,15 +1,15 @@
 // Addresses of several registers used to control parallel I/O.
-volatile int *pb_pio_enable          = (int *)0x400E1000;
-volatile int *pb_output_enable       = (int *)0x400E1010;
-volatile int *pb_set_output_data     = (int *)0x400E1030;
-volatile int *pb_clear_output_data   = (int *)0x400E1034;
+volatile int * const pb_pio_enable          = (int *)0x400E1000;
+volatile int * const pb_output_enable       = (int *)0x400E1010;
+volatile int * const pb_set_output_data     = (int *)0x400E1030;
+volatile int * const pb_clear_output_data   = (int *)0x400E1034;
 
 // Bit mask for PB27. This is pin 13 (the built-in LED) on the Arduino Due.
-int pb27_mask = 0x08000000;
+const int pb27_mask = 0x08000000;
 
 // Addresses of several registers used to control the real-time timer.
-volatile int *timer_mode_register  = (int *)0x400E1A30;
-volatile int *timer_value_register = (int *)0x400E1A38;
+volatile int * const timer_mode_register  = (int *)0x400E1A30;
+volatile int * const timer_value_register = (int *)0x400E1A38;
 
 
 // As the name suggests, this function sleeps for a given number of

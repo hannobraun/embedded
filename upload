@@ -6,10 +6,11 @@
 # Just make sure to press the tiny "ERASE" button on the Arduino Due before
 # uploading and everything should work.
 
-arm-none-eabi-gcc \
+clang \
 	-nostdlib \
-	-mcpu=cortex-m3 \
-	-mthumb \
+	-ffreestanding \
+	-target arm-none-eabi \
+	-march=armv7-m \
 	-Tlinker-script.ld \
 	-Wl,--entry=start \
 	blink.c \

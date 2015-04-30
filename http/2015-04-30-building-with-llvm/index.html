@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>embedded.hannobraun.de</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+	</head>
+
+	<body>
+		<main>
+			<p class="date">2015-04-30</p>
+			<h1>Building With LLVM</h1>
+
+			<p>
+				Since I began this little endeavor a few weeks ago, I've had a
+				lot of fun and learned much about embedded systems and low-level
+				programming. I started out with a
+				<a href="/2015-04-10-hello-world">simple Arduino program</a> and
+				kept chipping away small pieces, until I had removed all
+				third-party code. All that was left was
+				<a href="/2015-04-25-declaring-independence">a single C
+				file</a>, giving me full control over my Arduino Due.
+			</p>
+
+			<p>
+				Now that this first milestone is reached, I have chosen another
+				goal to work towards: While I like C quite a lot, I like
+				<a href="http://rust-lang.org/">Rust</a><a class="footnote" href="#note-1">[1]</a>
+				more, and I'd like to use it for my future embedded projects. So
+				this will be the main topic for the next articles: Rewriting our
+				C program in Rust, and then cleaning it up. Before I attempt
+				something more complicated than blinking an LED, I'd like to
+				build up some abstractions that allow me to write clean and
+				reliable embedded code in Rust.
+			</p>
+
+			<p>
+				Since the Rust compiler is based on
+				<a href="http://llvm.org/">LLVM</a> I thought it might make the
+				transition easier to use LLVM's C compiler,
+				<a href="http://clang.llvm.org/">Clang</a>, to build our C
+				program. This didn't require any modifications to the C code,
+				but for the sake of completeness, here's the program again:
+			</p>
+
+			<pre>
+// This is the top of the stack, as provided to us by the linker.
+extern unsigned int _estack;
+
+
+// This is a partial definition of the vector table. It only defines the
+// first two entries which, as far as I can tell, are the minimum needed
+// for a program to work at all.
+// Space for the other interrupt handlers is reserved. I'm not sure if this
+// is necessary, but I can imagine that the vector table not having the
+// right length could cause all kinds of problems (imagine if it was too
+// short, and the linker would place something else directly after it).
+typedef struct {
+	void *initial_stack_pointer_value;
+	void *reset_handler;
+
+	char other_interrupt_vectors[44 * 4]; // space for 44 32-bit pointers
+} VectorTable;
+
+
+void start();
+
+
+// The vector table. We're using GCC-specific functionality to place this
+// into the .vectors section, not where it would normally go (I suppose
+// .rodata). The linker script makes sure that the .vectors section is at
+// the right place.
+__attribute__ ((section(".vectors")))
+const VectorTable vector_table = {
+	(void *)(&amp;_estack),
+	(void *)start,
+};
+
+
+
+// Addresses of several registers used to control parallel I/O.
+static volatile int * const pb_pio_enable          = (int *)0x400E1000;
+static volatile int * const pb_output_enable       = (int *)0x400E1010;
+static volatile int * const pb_set_output_data     = (int *)0x400E1030;
+static volatile int * const pb_clear_output_data   = (int *)0x400E1034;
+
+// Bit mask for PB27. This is pin 13 (the built-in LED) on the Arduino Due.
+static const int pb27_mask = 0x08000000;
+
+// Addresses of several registers used to control the real-time timer.
+static volatile int * const timer_mode_register  = (int *)0x400E1A30;
+static volatile int * const timer_value_register = (int *)0x400E1A38;
+
+
+// As the name suggests, this function sleeps for a given number of
+// milliseconds. Our replacement for Arduino's delay function.
+void sleep_ms(int milliseconds) {
+	int sleep_until = *timer_value_register + milliseconds;
+	while (*timer_value_register &lt; sleep_until) {}
+}
+
+// This function is the entry point for our application and the handler
+// function for the reset interrupt.
+void start() {
+	// Enable PB27 (pin 13) and configure it for output.
+	*pb_pio_enable    = pb27_mask;
+	*pb_output_enable = pb27_mask;
+
+	// Set the timer to a resolution of a millisecond.
+	*timer_mode_register = 0x00000020;
+
+	// Continuously set and clear output on PB27 (pin 13). This blinks
+	// the Due's built-in LED, which is the single purpose of this
+	// program.
+	while (1) {
+		*pb_set_output_data = pb27_mask;
+		sleep_ms(200);
+		*pb_clear_output_data = pb27_mask;
+		sleep_ms(800);
+	}
+}
+			</pre>
+
+			<p>
+				Figuring out the correct build command took a bit of
+				time<a class="footnote" href="#note-2">[2]</a>, but
+				it didn't end up much different from before:
+			</p>
+
+			<pre>
+clang \
+	-nostdlib \
+	-ffreestanding \
+	-target arm-none-eabi \
+	-march=armv7-m \
+	-Tlinker-script.ld \
+	-Wl,--entry=start \
+	blink.c \
+	-o blink.elf
+			</pre>
+
+			<p>
+				There are a few gotchas to look out for here:
+			</p>
+
+			<ul>
+				<li>
+					I'm using the newest version of LLVM (3.6 at the time of
+					writing)<a class="footnote" href="#note-3">[3]</a>. I don't
+					know exactly, but it will probably not work with versions
+					that are much older.
+				</li>
+				<li>
+					LLVM is using parts of the GNU toolchain under the hood.
+					That means the various <code>arm-none-eabi-*</code> commands
+					still need to be installed.
+				</li>
+				<li>
+					LLVM automatically chooses the linker it uses based on the
+					<code>-target</code> parameter. That means, for example, if
+					you were being too clever and set <code>-target</code> to
+					<code>armv7m-none-eabi</code>, because better matched your
+					hardware better, it won't find <code>arm-none-eabi-ld</code>
+					and will use plain <code>ld</code> instead (which knows
+					nothing about ARM and therefore fails pathetically).
+				</li>
+			</ul>
+
+			<p>
+				The rest of the build and upload commands are unchanged:
+			</p>
+
+			<pre>
+arm-none-eabi-objcopy \
+	-O binary \
+	blink.elf \
+	blink.bin
+
+bossac --write --verify --boot -R blink.bin
+			</pre>
+
+			<p>
+				Please don't forget to press the tiny <code>ERASE</code> button
+				on the Arduino Due before attempting to upload the program with
+				<code>bossac</code>.
+			</p>
+
+			<p>
+				That's it for today. As always, the full code is available
+				<a href="https://github.com/hannobraun/embedded">on GitHub</a>.
+				See you next time!
+			</p>
+
+			<hr />
+
+			<footer>
+				<a name="note-1"></a>
+				<span class="footnote-number">[1]</span>
+				<p>
+					For those who don't know,
+					<a href="http://rust-lang.org/">Rust</a> is a relatively new
+					programming language developed by
+					<a href="https://www.mozilla.org/en-US/research/">Mozilla
+					Research</a>. It aims to fill the same niche as C/C++,
+					providing the same low-level access to, and control over the
+					hardware, while putting heavy emphasis on safety and
+					reliability.
+				</p>
+
+				<p>
+					I've been using Rust for around 18 months now (since late
+					2013) and have been really happy with it so far. I'm not
+					exactly breaking new ground by using Rust in an embedded
+					context (others
+					<a href="https://zinc.rs/">have</a>
+					<a href="https://github.com/neykov/armboot">done it</a>
+					<a href="https://github.com/jensnockert/dueboot">before</a>),
+					but this use case doesn't seem to be well-developed yet, so
+					expect a bumpy ride.
+				</p>
+
+				<a name="note-2"></a>
+				<span class="footnote-number">[2]</span>
+				<p>
+					Unfortunately I can't really recommend any good
+					documentation for this. I ended looking at lots of examples
+					online, copying bits and pieces from them, until I figured
+					out what worked for my case. The
+					<a href="http://clang.llvm.org/docs/CrossCompilation.html">official
+					documentation</a> is good though, just too sparse and
+					seemingly outdated.
+				</p>
+
+				<a name="note-3"></a>
+				<span class="footnote-number">[3]</span>
+				<p>
+					As I said before, I'm on Ubuntu. LLVM maintains
+					<a href="http://llvm.org/apt/">repositories for Ubuntu and
+					Debian</a> and I got it from there.
+				</p>
+			</footer>
+
+			<hr />
+		</main>
+
+		<footer>
+			<p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+		</footer>
+	</body>
+</html>

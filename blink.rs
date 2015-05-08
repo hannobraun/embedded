@@ -1,5 +1,41 @@
+#![feature(intrinsics, lang_items, no_std)]
+
+#![no_main]
+#![no_std]
+
+
+// Declare some intrinsic functions that are provided to us by the compiler.
+extern "rust-intrinsic" {
+	fn overflowing_add<T>(a: T, b: T) -> T;
+	fn u32_sub_with_overflow(x: u32, y: u32) -> (u32, bool);
+}
+
+
+// The following are some very basic marker traits that all Rust programs need
+// to function. Normally basic stuff like this is taken care for us in Rust's
+// core library, but since we're not using that yet, we need to define it
+// ourselves.
+#[lang = "copy"]
+trait Copy {}
+#[lang = "sized"]
+trait Sized {}
+#[lang = "sync"]
+trait Sync {}
+
+
+// I'm not 100% sure what this function does, but references to it are compiled
+// into the program by the Rust compiler. I think it would be called in the case
+// of a program panic.
+#[no_mangle]
+pub fn __aeabi_unwind_cpp_pr0() {
+	loop {}
+}
+
+
 // This is the top of the stack, as provided to us by the linker.
-extern unsigned int _estack;
+extern {
+	static _estack: u32;
+}
 
 
 // This is a partial definition of the vector table. It only defines the first
@@ -9,52 +45,59 @@ extern unsigned int _estack;
 // necessary, but I can imagine that the vector table not having the right
 // length could cause all kinds of problems (imagine if it was too short, and
 // the linker would place something else directly after it).
-typedef struct {
-	void *initial_stack_pointer_value;
-	void *reset_handler;
+pub struct VectorTable {
+	pub initial_stack_pointer_value: &'static u32,
+	pub reset_handler              : fn(),
 
-	char other_interrupt_vectors[44 * 4]; // space for 44 32-bit pointers
-} VectorTable;
+	pub other_interrupt_vectors: [u32; 44],
+}
 
-
-void start();
+impl Sync for VectorTable {}
 
 
 // The vector table. We're using GCC-specific functionality to place this into
 // the .vectors section, not where it would normally go (I suppose .rodata).
 // The linker script makes sure that the .vectors section is at the right place.
-__attribute__ ((section(".vectors")))
-const VectorTable vector_table = {
-	(void *)(&_estack),
-	(void *)start,
+#[link_section=".vectors"]
+pub static VECTOR_TABLE: VectorTable = VectorTable {
+	initial_stack_pointer_value: &_estack,
+	reset_handler              : start,
+	other_interrupt_vectors    : [0; 44],
 };
 
 
-
 // Addresses of several registers used to control parallel I/O.
-static volatile int * const pb_pio_enable          = (int *)0x400E1000;
-static volatile int * const pb_output_enable       = (int *)0x400E1010;
-static volatile int * const pb_set_output_data     = (int *)0x400E1030;
-static volatile int * const pb_clear_output_data   = (int *)0x400E1034;
+const PB_PIO_ENABLE       : *mut u32 = 0x400E1000 as *mut u32;
+const PB_OUTPUT_ENABLE    : *mut u32 = 0x400E1010 as *mut u32;
+const PB_SET_OUTPUT_DATA  : *mut u32 = 0x400E1030 as *mut u32;
+const PB_CLEAR_OUTPUT_DATA: *mut u32 = 0x400E1034 as *mut u32;
 
 // Bit mask for PB27. This is pin 13 (the built-in LED) on the Arduino Due.
-static const int pb27_mask = 0x08000000;
+const PB27_MASK: u32 = 0x08000000;
 
 // Addresses of several registers used to control the real-time timer.
-static volatile int * const timer_mode_register  = (int *)0x400E1A30;
-static volatile int * const timer_value_register = (int *)0x400E1A38;
+const TIMER_MODE_REGISTER : *mut   u32 = 0x400E1A30 as *mut   u32;
+const TIMER_VALUE_REGISTER: *const u32 = 0x400E1A38 as *const u32;
 
 
 // As the name suggests, this function sleeps for a given number of
 // milliseconds. Our replacement for Arduino's delay function.
-void sleep_ms(int milliseconds) {
-	int sleep_until = *timer_value_register + milliseconds;
-	while (*timer_value_register < sleep_until) {}
+fn sleep_ms(milliseconds: u32) {
+	unsafe {
+		let sleep_until = overflowing_add(*TIMER_VALUE_REGISTER, milliseconds);
+
+		let mut sleep = true;
+		while sleep {
+			let (_, overflow) =
+				u32_sub_with_overflow(sleep_until, *TIMER_VALUE_REGISTER);
+			sleep = !overflow;
+		}
+	}
 }
 
 // This function is the entry point for our application and the handler function
 // for the reset interrupt.
-void start() {
+fn start() {
 	// TODO: This function doesn't copy the .relocate segment into RAM, as init
 	//       code would normally do. We're getting away with this, because this
 	//       program doesn't use any global variables (or more generally,
@@ -88,19 +131,21 @@ void start() {
 	//          think global variables are such a hot idea, so I don't want to
 	//          do anything that supports them, out of pure stubbornness.
 
-	// Enable PB27 (pin 13) and configure it for output.
-	*pb_pio_enable    = pb27_mask;
-	*pb_output_enable = pb27_mask;
+	unsafe {
+		// Enable PB27 (pin 13) and configure it for output.
+		*PB_PIO_ENABLE    = PB27_MASK;
+		*PB_OUTPUT_ENABLE = PB27_MASK;
 
-	// Set the timer to a resolution of a millisecond.
-	*timer_mode_register = 0x00000020;
+		// Set the timer to a resolution of a millisecond.
+		*TIMER_MODE_REGISTER = 0x00000020;
 
-	// Continuously set and clear output on PB27 (pin 13). This blinks the Due's
-	// built-in LED, which is the single purpose of this program.
-	while (1) {
-		*pb_set_output_data = pb27_mask;
-		sleep_ms(200);
-		*pb_clear_output_data = pb27_mask;
-		sleep_ms(800);
+		// Continuously set and clear output on PB27 (pin 13). This blinks the
+		// Due's built-in LED, which is the single purpose of this program.
+		loop {
+			*PB_SET_OUTPUT_DATA = PB27_MASK;
+			sleep_ms(200);
+			*PB_CLEAR_OUTPUT_DATA = PB27_MASK;
+			sleep_ms(800);
+		}
 	}
 }

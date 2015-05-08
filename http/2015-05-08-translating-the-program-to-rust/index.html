@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>embedded.hannobraun.de</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+	</head>
+
+	<body>
+		<main>
+			<p class="date">2015-05-08</p>
+			<h1>Translating the Program to Rust</h1>
+
+			<p>
+				<a href="/2015-04-30-building-with-llvm">Last time</a>, I
+				announced my new goal of programming my
+				<a href="http://www.arduino.cc/en/Main/ArduinoBoardDue">Arduino
+				Due</a> with <a href="http://rust-lang.org">Rust</a>. Doing just
+				that turned out to be surprisingly easy. Since our program
+				doesn't have any dependencies and consists of a single C file,
+				there was only a single problem to solve: Translating the
+				program and figuring out how to build that.
+			</p>
+
+			<p>
+				Before we take a look at the new program, two notes:
+			</p>
+
+			<ol>
+				<li>
+					I've deleted the old C program from
+					<a href="https://github.com/hannobraun/embedded">the
+					repository</a>, but thanks to the wonders of version
+					control, you can always access the
+					<a href="https://github.com/hannobraun/embedded/blob/75831e9ba671d8f5c4aa9d0a9a83137820c94477/blink.c">last
+					version of the C program</a>. It might be helpful to refer
+					back to it during the article, to compare the old C code
+					with the new Rust code.
+				</li>
+				<li>
+					From here on out, I'm going to assume a basic familiarity
+					with Rust, just like I previously assumed a basic
+					familiarity with C. I'll attempt to explain any weird stuff,
+					but I will just take it for granted that you'll be able to
+					understand "normal" Rust code. If you don't know Rust but
+					still want to follow along, the
+					<a href="http://doc.rust-lang.org/nightly/book/">official
+					documentation</a> is a good place to start learning.
+				</li>
+			</ol>
+
+			<p>
+				Okay then, without further ado, let's get to the program!
+			</p>
+
+			<pre>
+#![feature(intrinsics, lang_items, no_std)]
+			</pre>
+
+			<p>
+				Before we're doing anything else, we need to opt into a few
+				language features that we're going to use. While the Rust
+				developers promise not to break programs using the stable subset
+				of the language<a class="footnote" href="#note-1">[1]</a>, we
+				need some of the unstable features for our use case, which
+				requires an explicit opt-in.
+			</p>
+
+			<p>
+				This also means that our program will only work with a nightly
+				version of Rust, since unstable features are not available in
+				official releases.
+			</p>
+
+			<pre>
+#![no_main]
+#![no_std]
+			</pre>
+
+			<p>
+				Here we're telling the compiler two things.
+			</p>
+
+			<ul>
+				<li>
+					Even though this is a program, we won't use a main
+					functions. Normal programs have an entry point that gets
+					executed after they are started. This doesn't make a lot of
+					sense for a program running on bare metal, without an
+					operating system. Our program's entry point is the handler
+					for the reset interrupt, which we will need to set up
+					ourselves.
+				</li>
+				<li>
+					We don't want to use the standard library. While very
+					useful, Rust's standard library contains a lot of
+					functionality (like files and networking) that aren't
+					applicable when you're running without an operating
+					system<a class="footnote" href="#note-2">[2]</a>.
+				</li>
+			</ul>
+
+			<pre>
+extern "rust-intrinsic" {
+	fn overflowing_add<T>(a: T, b: T) -> T;
+	fn u32_sub_with_overflow(x: u32, y: u32) -> (u32, bool);
+}
+			</pre>
+
+			<p>
+				Here we're declaring some intrinsic functions that are provided
+				to us by the compiler. Rust relies a lot on library code to
+				provide even basic functionality and, by itself, is even more
+				limited than C in a lot of ways. Specifically, even basic
+				operators like <code>+</code> and <code>&lt;</code> are not
+				available without building some basic infrastructure first.
+			</p>
+
+			<p>
+				For now, we're working around this problem by not using those
+				operators and relying on intrinsic functions instead.
+			</p>
+
+			<pre>
+#[lang = "copy"]
+trait Copy {}
+#[lang = "sized"]
+trait Sized {}
+#[lang = "sync"]
+trait Sync {}
+			</pre>
+
+			<p>
+				This is another example of Rust not really being able to do
+				anything without some basic infrastructure. Here we're defining
+				a few basic traits that are used to mark types.
+			</p>
+
+			<ul>
+				<li>
+					A type marked with <code>Copy</code> can be copied from one
+					place to another, as opposed to being moved and not being
+					available anymore in its place of origin.
+				</li>
+				<li>
+					<code>Sized</code> means that the type's size is known at
+					compile time.
+				</li>
+				<li>
+					A <code>Sync</code> type can be accessed safely from
+					multiple threads.
+				</li>
+			</ul>
+
+			<p>
+				None is this is particularly relevant to our program, but those
+				concepts are so basic to Rust that the compiler won't be able to
+				compile a program without those being defined. Since we said
+				above that we don't want the compiler to link the standard
+				library, we need to provide this kind of stuff ourselves.
+			</p>
+
+			<pre>
+#[no_mangle]
+pub fn __aeabi_unwind_cpp_pr0() {
+	loop {}
+}
+			</pre>
+
+			<p>
+				I'm not so sure what this function is, but the Rust compiler
+				compiles references to it into the program, so it needs to be
+				defined somewhere or the program won't link. I think this is
+				related to stack unwinding, a thing that needs to happen if the
+				program panics, that is, encounters an
+				unrecoverable<a class="footnote" href="#note-3">[3]</a> error.
+			</p>
+
+			<p>
+				 For our purpose, this stub implementation that just loops
+				 forever is more than
+				 enough<a class="footnote" href="#note-4">[4]</a>. At some point
+				 we'll need better error handling, but let's not get ahead of
+				 ourselves.
+			</p>
+
+			<pre>
+// This is the top of the stack, as provided to us by the linker.
+extern {
+	static _estack: u32;
+}
+			</pre>
+
+			<p>
+				So much for weird Rust-specific stuff. This is something we
+				recognize from our C program! From here on out, everything will
+				be a, more or less, straight translation.
+			</p>
+
+			<pre>
+pub struct VectorTable {
+	pub initial_stack_pointer_value: &amp;'static u32,
+	pub reset_handler              : fn(),
+
+	pub other_interrupt_vectors: [u32; 44],
+}
+
+impl Sync for VectorTable {}
+			</pre>
+
+			<p>
+				The translated definition of the vector table type. The only
+				difference to the C code is that the types are a bit more
+				strict. This wasn't required in C, as C allows us to cast one
+				type to another willy-nilly. Rust is a bit more strict, hence
+				the more accurate types.
+			</p>
+
+			<p>
+				Since we're going to save the vector table in a global variable,
+				we need to implement the <code>Sync</code> trait for it, thereby
+				promising the Rust compiler that it'll be safe to access it from
+				multiple threads.
+			</p>
+
+			<pre>
+// The vector table. We're telling the compiler to place this into .vectors
+// section, not where it would normally go (I suppose .rodata). The linker
+// script makes sure that the .vectors section is at the right place.
+#[link_section=".vectors"]
+pub static VECTOR_TABLE: VectorTable = VectorTable {
+	initial_stack_pointer_value: &amp;_estack,
+	reset_handler              : start,
+	other_interrupt_vectors    : [0; 44],
+};
+			</pre>
+
+			<p>
+				Safe for the slightly different syntax, this is exactly the same
+				as it was in the C program.
+			</p>
+
+			<pre>
+// Addresses of several registers used to control parallel I/O.
+const PB_PIO_ENABLE       : *mut u32 = 0x400E1000 as *mut u32;
+const PB_OUTPUT_ENABLE    : *mut u32 = 0x400E1010 as *mut u32;
+const PB_SET_OUTPUT_DATA  : *mut u32 = 0x400E1030 as *mut u32;
+const PB_CLEAR_OUTPUT_DATA: *mut u32 = 0x400E1034 as *mut u32;
+
+// Bit mask for PB27. This is pin 13 (the built-in LED) on the Arduino Due.
+const PB27_MASK: u32 = 0x08000000;
+
+// Addresses of several registers used to control the real-time timer.
+const TIMER_MODE_REGISTER : *mut   u32 = 0x400E1A30 as *mut   u32;
+const TIMER_VALUE_REGISTER: *const u32 = 0x400E1A38 as *const u32;
+			</pre>
+
+			<p>
+				More straight-forward translation. The only thing to note is
+				that those <code>*mut</code> and <code>*const</code> pointers
+				are not the pointer types we would use in regular Rust code.
+				Instead, they are so-called unsafe pointers, specifically meant
+				for interacting with C code (or in this case, low-level
+				hardware).
+			</p>
+
+			<pre>
+fn sleep_ms(milliseconds: u32) {
+	unsafe {
+		let sleep_until = overflowing_add(
+			*TIMER_VALUE_REGISTER,
+			milliseconds
+		);
+
+		let mut sleep = true;
+		while sleep {
+			let (_, overflow) = u32_sub_with_overflow(
+				sleep_until,
+				*TIMER_VALUE_REGISTER
+			);
+			sleep = !overflow;
+		}
+	}
+}
+			</pre>
+
+			<p>
+				The sleep function has changed a bit, and not for the better. As
+				I explained above, we can't use basic operators yet, so I had to
+				get a bit creative with intrinsic functions. We'll clean this up
+				later.
+			</p>
+
+			<pre>
+fn start() {
+	unsafe {
+		// Enable PB27 (pin 13) and configure it for output.
+		*PB_PIO_ENABLE    = PB27_MASK;
+		*PB_OUTPUT_ENABLE = PB27_MASK;
+
+		// Set the timer to a resolution of a millisecond.
+		*TIMER_MODE_REGISTER = 0x00000020;
+
+		// Continuously set and clear output on PB27 (pin 13). This
+		// blinks the Due's built-in LED, which is the single
+		// purpose of this program.
+		loop {
+			*PB_SET_OUTPUT_DATA = PB27_MASK;
+			sleep_ms(200);
+			*PB_CLEAR_OUTPUT_DATA = PB27_MASK;
+			sleep_ms(800);
+		}
+	}
+}
+			</pre>
+
+			<p>
+				And the <code>start</code> function. Again, pretty much the same
+				as it used to be in C. The main difference is that Rust
+				considers our writes to addresses pointed at by unsafe pointers
+				to be an unsafe operation. Hence, the <code>unsafe</code>
+				block, which are just a promise to the compiler that we paid
+				really close attention to what happens within the block and that
+				it can treat the <code>start</code> function as safe, even
+				though it contains unsafe code.
+			</p>
+
+			<p>
+				The build command is pretty straight-forward:
+			</p>
+
+			<pre>
+rustc \
+	--target=target.json \
+	-C link-args="-Tlinker-script.ld" \
+	-o blink.elf \
+	blink.rs
+			</pre>
+
+			<p>
+				The command refers to the file <code>target.json</code> which
+				contains all the nasty platform-specific
+				details<a class="footnote" href="#note-5">[5]</a>:
+			</p>
+
+			<pre>
+{
+	"data-layout"         : "e-p:32:32:32-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:64:128-a:0:64-n32",
+	"llvm-target"         : "thumbv7m-unknown-none-eabi",
+	"linker"              : "arm-none-eabi-gcc",
+	"target-endian"       : "little",
+	"target-pointer-width": "32",
+	"arch"                : "armv7-m",
+	"os"                  : "none",
+	"executables"         : true
+}
+			</pre>
+
+			<p>
+				Some of it is straight-forward, some of it looks like black
+				magic. Following established tradition, I'm not going to fret
+				too much about this for now. My goal remains to understand
+				what's going on with my program running on the hardware.
+				Whatever sorcery is required to build the program in the first
+				place is secondary<a class="footnote" href="#note-6">[6]</a>.
+			</p>
+
+			<p>
+				The rest of the build process has, yet again, remained
+				unchanged. I'm not going to repeat it any more.The
+				<a href="https://github.com/hannobraun/embedded/blob/e8d0cbf840e5a5ba68650dbd02c2d859987487c3/upload">full
+				build script</a> is available in the repository.
+			</p>
+
+			<p>
+				And that's it for today. As always, the full code is available
+				<a href="https://github.com/hannobraun/embedded">on GitHub</a>.
+				See you next time!
+			</p>
+
+			<hr />
+
+			<footer>
+				<a name="note-1"></a>
+				<span class="footnote-number">[1]</span>
+				<p>
+					Well, they don't guarantee it just yet, but they will after
+					Rust 1.0 is released, a week after I'm writing this.
+				</p>
+
+				<a name="note-2"></a>
+				<span class="footnote-number">[2]</span>
+				<p>
+					However, there is a subset of the standard library that is
+					applicable to our situation,
+					<a href="http://doc.rust-lang.org/nightly/core/index.html">libcore</a>.
+					We'll get to that in a future article.
+				</p>
+
+				<a name="note-3"></a>
+				<span class="footnote-number">[3]</span>
+				<p>
+					Strictly speaking, Rust panics can be recovered from, they
+					just can't be recovered from within the same thread. Since
+					we only have one thread, any panic will always mean the end
+					of our program.
+				</p>
+
+				<a name="note-4"></a>
+				<span class="footnote-number">[4]</span>
+				<p>
+					<a href="http://antoinealb.net/programming/2015/05/01/rust-on-arm-microcontroller.html">This
+					blog post</a> provided this simple, yet elusive, insight.
+				</p>
+
+				<a name="note-5"></a>
+				<span class="footnote-number">[5]</span>
+				<p>
+					The <a href="https://github.com/neykov/armboot">armboot</a>
+					repository has been a great help in figuring those out.
+				</p>
+
+				<a name="note-6"></a>
+				<span class="footnote-number">[6]</span>
+				<p>
+					If you'd like to read up on Rust's flexible target
+					specification infrastructure, the
+					<a href="https://github.com/rust-lang/rfcs/blob/master/text/0131-target-specification.md">RFC
+					that originally introduced it</a> seems like a good place to
+					start.
+				</p>
+			</footer>
+
+			<hr />
+		</main>
+
+		<footer>
+			<p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+		</footer>
+	</body>
+</html>

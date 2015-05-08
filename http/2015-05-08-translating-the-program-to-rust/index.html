@@ -373,6 +373,32 @@ rustc \
 			</p>
 
 			<p>
+				Before all of this works, there's still one missing piece,
+				however. The Rust compiler tries to link to a file called
+				<code>libcompiler-rt.a</code>, and the build fails if it's not
+				available. I did a bit of research and found the
+				<a href="http://compiler-rt.llvm.org/">compiler-rt Runtime
+				library</a>.
+			</p>
+
+			<p>
+				In a bit of sly thinking that I'm quite proud of, I thought
+				that, since I'm not using anything from that library (that I
+				know of), maybe I can just create an empty library to shut the
+				compiler up? Turns out I can!
+			</p>
+
+			<pre>
+ar m libcompiler-rt.a
+			</pre>
+
+			<p>
+				Using the <code>ar</code> command, which should be available on
+				any Linux system, you can create an empty library, which for now
+				is enough.
+			</p>
+
+			<p>
 				And that's it for today. As always, the full code is available
 				<a href="https://github.com/hannobraun/embedded">on GitHub</a>.
 				See you next time!

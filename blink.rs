@@ -55,9 +55,9 @@ pub struct VectorTable {
 impl Sync for VectorTable {}
 
 
-// The vector table. We're using GCC-specific functionality to place this into
-// the .vectors section, not where it would normally go (I suppose .rodata).
-// The linker script makes sure that the .vectors section is at the right place.
+// The vector table. We're telling the compiler to place this into .vectors
+// section, not where it would normally go (I suppose .rodata). The linker
+// script makes sure that the .vectors section is at the right place.
 #[link_section=".vectors"]
 pub static VECTOR_TABLE: VectorTable = VectorTable {
 	initial_stack_pointer_value: &_estack,

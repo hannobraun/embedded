@@ -10,7 +10,7 @@ rustc \
 	--target=target.json \
 	-C link-args="-Tlinker-script.ld" \
 	-o blink.elf \
-	blink.rs &&
+	blink/blink.rs &&
 
 arm-none-eabi-objcopy \
 	-O binary \

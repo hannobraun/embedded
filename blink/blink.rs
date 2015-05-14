@@ -1,7 +1,12 @@
-#![feature(intrinsics, lang_items, no_std)]
+#![feature(core, intrinsics, lang_items, no_std)]
 
 #![no_main]
 #![no_std]
+
+
+extern crate core;
+
+use core::prelude::*;
 
 
 // Declare some intrinsic functions that are provided to us by the compiler.
@@ -11,16 +16,19 @@ extern "rust-intrinsic" {
 }
 
 
-// The following are some very basic marker traits that all Rust programs need
-// to function. Normally basic stuff like this is taken care for us in Rust's
-// core library, but since we're not using that yet, we need to define it
-// ourselves.
-#[lang = "copy"]
-trait Copy {}
-#[lang = "sized"]
-trait Sized {}
-#[lang = "sync"]
-unsafe trait Sync {}
+// These are a few language items that are required by the core library. The
+// core library is completely platform agnostic and doesn't assume anything
+// (besides very basic things like a stack) about the platform it is running on.
+// Therefore it can't know how to handle program panics and the like.
+
+#[lang = "panic_fmt"]
+fn panic_fmt() { loop {} }
+
+#[lang = "stack_exhausted"]
+fn stack_exhausted() { loop {} }
+
+#[lang = "eh_personality"]
+fn eh_personality() { loop {} }
 
 
 // I'm not 100% sure what this function does, but references to it are compiled

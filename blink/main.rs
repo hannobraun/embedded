@@ -134,8 +134,9 @@ fn start() {
 		// Set the timer to a resolution of a millisecond.
 		*TIMER_MODE_REGISTER = 0x00000020;
 
-		// Continuously set and clear output on PB27 (pin 13). This blinks the
-		// Due's built-in LED, which is the single purpose of this program.
+		// Continuously set and clear output on pin 27 of PIO_B (pin 13 on the
+		// Arduino Due). This blinks the Due's built-in LED, which is the single
+		// purpose of this program.
 		loop {
 			(*PIO_B).set_output_data = P27;
 			sleep_ms(200);

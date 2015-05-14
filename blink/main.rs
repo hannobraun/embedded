@@ -121,8 +121,8 @@ fn start() {
 
 	unsafe {
 		// Enable PB27 (pin 13) and configure it for output.
-		*PB_PIO_ENABLE    = PB27_MASK;
-		*PB_OUTPUT_ENABLE = PB27_MASK;
+		(*PIO_B).pio_enable    = PB27_MASK;;
+		(*PIO_B).output_enable = PB27_MASK;
 
 		// Set the timer to a resolution of a millisecond.
 		*TIMER_MODE_REGISTER = 0x00000020;
@@ -130,9 +130,9 @@ fn start() {
 		// Continuously set and clear output on PB27 (pin 13). This blinks the
 		// Due's built-in LED, which is the single purpose of this program.
 		loop {
-			*PB_SET_OUTPUT_DATA = PB27_MASK;
+			(*PIO_B).set_output_data = PB27_MASK;
 			sleep_ms(200);
-			*PB_CLEAR_OUTPUT_DATA = PB27_MASK;
+			(*PIO_B).clear_output_data = PB27_MASK;
 			sleep_ms(800);
 		}
 	}

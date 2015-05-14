@@ -123,7 +123,8 @@ fn start() {
 	//          do anything that supports them, out of pure stubbornness.
 
 	unsafe {
-		// Enable PB27 (pin 13) and configure it for output.
+		// Enable pin 27 of PIO_B (pin 13 on the Arduino Due) and configure it
+		// for output.
 		(*PIO_B).pio_enable    = P27;
 		(*PIO_B).output_enable = P27;
 

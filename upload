@@ -10,11 +10,6 @@ mkdir -p output
 
 rustc \
 	--target=target.json \
-	-o output/libcore.rlib \
-	vendor/rust/src/libcore/lib.rs &&
-
-rustc \
-	--target=target.json \
 	-C link-args="-Tlinker-script.ld" \
 	-L output \
 	-o output/blink.elf \

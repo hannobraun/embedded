@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+mkdir -p output
+
+rustc \
+	--target=target.json \
+	-o output/libcore.rlib \
+	vendor/rust/src/libcore/lib.rs

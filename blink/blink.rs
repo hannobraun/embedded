@@ -9,13 +9,6 @@ extern crate core;
 use core::prelude::*;
 
 
-// Declare some intrinsic functions that are provided to us by the compiler.
-extern "rust-intrinsic" {
-	fn overflowing_add<T>(a: T, b: T) -> T;
-	fn u32_sub_with_overflow(x: u32, y: u32) -> (u32, bool);
-}
-
-
 // These are a few language items that are required by the core library. The
 // core library is completely platform agnostic and doesn't assume anything
 // (besides very basic things like a stack) about the platform it is running on.
@@ -89,14 +82,8 @@ const TIMER_VALUE_REGISTER: *const u32 = 0x400E1A38 as *const u32;
 // milliseconds. Our replacement for Arduino's delay function.
 fn sleep_ms(milliseconds: u32) {
 	unsafe {
-		let sleep_until = overflowing_add(*TIMER_VALUE_REGISTER, milliseconds);
-
-		let mut sleep = true;
-		while sleep {
-			let (_, overflow) =
-				u32_sub_with_overflow(sleep_until, *TIMER_VALUE_REGISTER);
-			sleep = !overflow;
-		}
+		let sleep_until = *TIMER_VALUE_REGISTER + milliseconds;
+		while *TIMER_VALUE_REGISTER < sleep_until {}
 	}
 }
 

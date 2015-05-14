@@ -20,7 +20,7 @@ trait Copy {}
 #[lang = "sized"]
 trait Sized {}
 #[lang = "sync"]
-trait Sync {}
+unsafe trait Sync {}
 
 
 // I'm not 100% sure what this function does, but references to it are compiled
@@ -52,7 +52,7 @@ pub struct VectorTable {
 	pub other_interrupt_vectors: [u32; 44],
 }
 
-impl Sync for VectorTable {}
+unsafe impl Sync for VectorTable {}
 
 
 // The vector table. We're telling the compiler to place this into .vectors

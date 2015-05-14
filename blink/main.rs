@@ -66,6 +66,9 @@ unsafe impl Sync for VectorTable {}
 // script makes sure that the .vectors section is at the right place.
 #[link_section=".vectors"]
 pub static VECTOR_TABLE: VectorTable = VectorTable {
+	// TODO: Find out why this is &_estack and not just _estack. I was able to
+	//       find documentation stating this fact, but offering no explanation.
+	//       See http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0803b/CHDBIJJD.html
 	initial_stack_pointer_value: &_estack,
 	reset_handler              : start,
 	other_interrupt_vectors    : [0; 44],

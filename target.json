@@ -4,7 +4,7 @@
 	"linker"              : "arm-none-eabi-gcc",
 	"target-endian"       : "little",
 	"target-pointer-width": "32",
-	"arch"                : "armv7-m",
+	"arch"                : "arm",
 	"os"                  : "none",
 	"executables"         : true
 }

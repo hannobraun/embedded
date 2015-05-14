@@ -11,7 +11,10 @@ mod pio;
 
 use core::prelude::*;
 
-use pio::*;
+use pio::{
+	PB27_MASK,
+	PIO_B,
+};
 
 
 // These are a few language items that are required by the core library. The

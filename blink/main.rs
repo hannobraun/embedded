@@ -12,7 +12,7 @@ mod pio;
 use core::prelude::*;
 
 use pio::{
-	PB27_MASK,
+	P27,
 	PIO_B,
 };
 
@@ -124,8 +124,8 @@ fn start() {
 
 	unsafe {
 		// Enable PB27 (pin 13) and configure it for output.
-		(*PIO_B).pio_enable    = PB27_MASK;;
-		(*PIO_B).output_enable = PB27_MASK;
+		(*PIO_B).pio_enable    = P27;
+		(*PIO_B).output_enable = P27;
 
 		// Set the timer to a resolution of a millisecond.
 		*TIMER_MODE_REGISTER = 0x00000020;
@@ -133,9 +133,9 @@ fn start() {
 		// Continuously set and clear output on PB27 (pin 13). This blinks the
 		// Due's built-in LED, which is the single purpose of this program.
 		loop {
-			(*PIO_B).set_output_data = PB27_MASK;
+			(*PIO_B).set_output_data = P27;
 			sleep_ms(200);
-			(*PIO_B).clear_output_data = PB27_MASK;
+			(*PIO_B).clear_output_data = P27;
 			sleep_ms(800);
 		}
 	}

@@ -34,10 +34,7 @@ fn eh_personality() { loop {} }
 // I'm not 100% sure what this function does, but references to it are compiled
 // into the program by the Rust compiler. I think it would be called in the case
 // of a program panic.
-#[no_mangle]
-pub fn __aeabi_unwind_cpp_pr0() {
-	loop {}
-}
+#[no_mangle] pub fn __aeabi_unwind_cpp_pr0() { loop {} }
 
 
 // This is the top of the stack, as provided to us by the linker.

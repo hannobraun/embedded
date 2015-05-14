@@ -88,6 +88,7 @@ pub struct Pio {
 }
 
 
+// Addresses of the PIO controllers. See chapters 31.7 and 31.7.1.
 pub const PIO_A: *mut Pio = 0x400E0E00 as *mut Pio;
 pub const PIO_B: *mut Pio = 0x400E1000 as *mut Pio;
 pub const PIO_C: *mut Pio = 0x400E1200 as *mut Pio;

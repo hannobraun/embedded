@@ -22,19 +22,19 @@ extern "rust-intrinsic" {
 // Therefore it can't know how to handle program panics and the like.
 
 #[lang = "panic_fmt"]
-fn panic_fmt() { loop {} }
+pub extern fn panic_fmt() { loop {} }
 
 #[lang = "stack_exhausted"]
-fn stack_exhausted() { loop {} }
+pub extern fn stack_exhausted() { loop {} }
 
 #[lang = "eh_personality"]
-fn eh_personality() { loop {} }
+pub extern fn eh_personality() { loop {} }
 
 
 // I'm not 100% sure what this function does, but references to it are compiled
 // into the program by the Rust compiler. I think it would be called in the case
 // of a program panic.
-#[no_mangle] pub fn __aeabi_unwind_cpp_pr0() { loop {} }
+#[no_mangle] pub extern fn __aeabi_unwind_cpp_pr0() { loop {} }
 
 
 // This is the top of the stack, as provided to us by the linker.

@@ -6,7 +6,12 @@
 
 extern crate core;
 
+mod pio;
+
+
 use core::prelude::*;
+
+use pio::*;
 
 
 // These are a few language items that are required by the core library. The
@@ -63,15 +68,6 @@ pub static VECTOR_TABLE: VectorTable = VectorTable {
 	other_interrupt_vectors    : [0; 44],
 };
 
-
-// Addresses of several registers used to control parallel I/O.
-const PB_PIO_ENABLE       : *mut u32 = 0x400E1000 as *mut u32;
-const PB_OUTPUT_ENABLE    : *mut u32 = 0x400E1010 as *mut u32;
-const PB_SET_OUTPUT_DATA  : *mut u32 = 0x400E1030 as *mut u32;
-const PB_CLEAR_OUTPUT_DATA: *mut u32 = 0x400E1034 as *mut u32;
-
-// Bit mask for PB27. This is pin 13 (the built-in LED) on the Arduino Due.
-const PB27_MASK: u32 = 0x08000000;
 
 // Addresses of several registers used to control the real-time timer.
 const TIMER_MODE_REGISTER : *mut   u32 = 0x400E1A30 as *mut   u32;

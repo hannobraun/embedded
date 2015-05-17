@@ -121,7 +121,7 @@ fn start() {
 		(*PIO_B).output_enable = P27;
 
 		// Set the timer to a resolution of a millisecond.
-		*TIMER_MODE_REGISTER = 0x00000020;
+		(*RTT).mode = 0x00000020;
 
 		// Continuously set and clear output on pin 27 of PIO_B (pin 13 on the
 		// Arduino Due). This blinks the Due's built-in LED, which is the single
@@ -139,7 +139,7 @@ fn start() {
 // milliseconds. Our replacement for Arduino's delay function.
 fn sleep_ms(milliseconds: u32) {
 	unsafe {
-		let sleep_until = *TIMER_VALUE_REGISTER + milliseconds;
-		while *TIMER_VALUE_REGISTER < sleep_until {}
+		let sleep_until = (*RTT).value + milliseconds;
+		while (*RTT).value < sleep_until {}
 	}
 }

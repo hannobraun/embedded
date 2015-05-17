@@ -2,6 +2,15 @@
 // See data sheet, chapter 13.
 
 
-// Addresses of several registers used to control the real-time timer.
-pub const TIMER_MODE_REGISTER : *mut   u32 = 0x400E1A30 as *mut   u32;
-pub const TIMER_VALUE_REGISTER: *const u32 = 0x400E1A38 as *const u32;
+// Real-time Timer user interface. See data sheet, chapter 13.5.
+// TODO: I'm not sure what guarantees the compiler makes about the memory layout
+//       of structs. Do I have to use #[repr(C)] or something similar?
+pub struct Rtt {
+	pub mode  : u32,
+	pub alarm : u32,
+	pub value : u32,
+	pub status: u32,
+}
+
+
+pub const RTT: *mut Rtt = 0x400E1A30 as *mut Rtt;

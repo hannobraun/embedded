@@ -14,18 +14,18 @@
 			<p>
 				<a href="/2015-05-14-adding-libcore">Last time</a>, we added
 				Rust's <code>libcore</code> to our program, enabling us to write
-				idiomatic Rust code that runs on our microcontroller. This
+				idiomatic Rust code that runs on a microcontroller. This
 				provides us with a good base for extending our program in the
-				future. However, before we go ahead and make the program do
-				something else than blinking an LED, I'd like to do some
-				cleaning up first.
+				future. However, before we go ahead and make it do something
+				else than blinking an LED, I'd like to do some cleaning up
+				first.
 			</p>
 
 			<p>
 				When I started to make the LED blink in the first place, I
 				didn't really explain how I was doing it. I just wrote some
-				cryptic code with the promise to explain how it works later.
-				Well, the time for explanations has now arrived.
+				cryptic code with the promise to explain it later. Well,
+				<em>later</em> has finally arrived.
 			</p>
 
 			<p>
@@ -34,8 +34,8 @@
 				Due</a> board for development. The Due uses Atmel's
 				<a href="http://www.atmel.com/devices/SAM3X8E.aspx">SAM3X8E</a>
 				microcontroller. Atmel provides a very thorough
-				<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, which I'm going to refer to for the rest of
-				this article.				
+				<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, which I'm going to refer to throughout the
+				rest of this article.
 			</p>
 
 			<p>
@@ -59,20 +59,19 @@ const PB_CLEAR_OUTPUT_DATA: *mut u32 = 0x400E1034 as *mut u32;
 			</pre>
 
 			<p>
-				ARM processor's, which the SAM3X8E is an example of, use a
+				ARM microcontrollers, which the SAM3X8E is an example of, use a
 				technique called
 				<a href="http://en.wikipedia.org/wiki/Memory-mapped_I/O">memory-mapped
 				I/O</a> for controlling input/output. This means, as opposed to
-				having to use special CPU instruction, a program has to write to
-				or read from specific memory addresses.
+				having to use special CPU instruction, a program writes to or
+				reads from specific memory addresses to perform I/O functions.
 			</p>
 
 			<p>
 				Those addresses aren't actually mapped to RAM, so writing to
 				them won't change a value in main memory. Instead, the hardware
 				recognizes that the program wrote to a special address and
-				performs whatever function is associated with that special
-				address.
+				performs whatever function is associated with that address.
 			</p>
 
 			<p>
@@ -87,12 +86,12 @@ const PB_CLEAR_OUTPUT_DATA: *mut u32 = 0x400E1034 as *mut u32;
 					be enabled before we can use them.
 				</li>
 				<li>
-					Using <code>PB_OUTPUT_ENABLE</code> we can enable output on
+					Using <code>PB_OUTPUT_ENABLE</code>, we can enable output on
 					a specific pin<a class="footnote" href="#note-3">[3]</a>.
-					Parallel I/O can also be used to read electrical signals
-					that come from external hardware. We have to tell the
-					hardware if we intend to use a pin to sense incoming signals
-					or set them ourselves.
+					Parallel I/O can also be used to sense electrical signals
+					from external hardware. We have to tell the system whether
+					we intend to use a pin to sense incoming signals, or to set
+					them ourselves.
 				</li>
 				<li>
 					Finally, <code>PB_SET_OUTPUT_DATA</code> and
@@ -147,29 +146,28 @@ loop {
 
 			<p>
 				This code does what it's supposed to in a straight-forward way.
-				It does have some problems, however:
+				There are some problems with it, however:
 			</p>
 
 			<ul>
 				<li>
-					There are many more registers to do various things with
-					parallel I/O. We don't need those yet, but it would be nice
+					There are many more registers for the various features of
+					Parallel I/O. We don't need those yet, but it would be nice
 					to have them all available going forward.
 				</li>
 				<li>
-					The SAM3X8E has actually a lot more than 32 pins (144 to be
-					exact). To make all of those accessible it has multiple sets
-					of registers (those sets are called <em>PIO
-					controllers</em>). If we had to repeat all the constant
-					above for each controller, that would be a lot of code to
-					write.
+					The SAM3X8E has a lot more than 32 pins (144 to be exact).
+					To make all of those accessible, it has multiple <em>PIO
+					controllers</em>, each with one set of registers. If we
+					had to repeat all the constant above for each controller,
+					that would be a lot of code to write.
 				</li>
 			</ul>
 
 			<p>
-				Luckily, there's an approach that works a bit better. Since the
-				registers of a controller are located next to each other, we can
-				use a struct to access them:
+				Luckily, there's a better approach. Since the registers of a
+				controller are located next to each other, we can use a struct
+				to access them:
 			</p>
 
 			<pre>
@@ -312,7 +310,7 @@ pub const P31: u32 = 0x80000000;
 			<p>
 				Done! Now we can access all of the features of all the available
 				parallel I/O controllers. The updated LED blinking code doesn't
-				look much different:
+				look much different from before:
 			</p>
 
 			<pre>
@@ -383,7 +381,7 @@ loop {
 				<p>
 					Pins are being counted from 0. Pin 0 is identified by the
 					least significant bit. This means to do something with pin
-					0, you would have to set the first of the 32 bits. To do
+					0, you would have to set the 1st of the 32 bits. To do
 					something with pin 27, you would have to set the 28th of the
 					32.
 				</p>

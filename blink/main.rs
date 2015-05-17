@@ -80,15 +80,6 @@ const TIMER_MODE_REGISTER : *mut   u32 = 0x400E1A30 as *mut   u32;
 const TIMER_VALUE_REGISTER: *const u32 = 0x400E1A38 as *const u32;
 
 
-// As the name suggests, this function sleeps for a given number of
-// milliseconds. Our replacement for Arduino's delay function.
-fn sleep_ms(milliseconds: u32) {
-	unsafe {
-		let sleep_until = *TIMER_VALUE_REGISTER + milliseconds;
-		while *TIMER_VALUE_REGISTER < sleep_until {}
-	}
-}
-
 // This function is the entry point for our application and the handler function
 // for the reset interrupt.
 fn start() {
@@ -143,5 +134,14 @@ fn start() {
 			(*PIO_B).clear_output_data = P27;
 			sleep_ms(800);
 		}
+	}
+}
+
+// As the name suggests, this function sleeps for a given number of
+// milliseconds. Our replacement for Arduino's delay function.
+fn sleep_ms(milliseconds: u32) {
+	unsafe {
+		let sleep_until = *TIMER_VALUE_REGISTER + milliseconds;
+		while *TIMER_VALUE_REGISTER < sleep_until {}
 	}
 }

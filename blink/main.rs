@@ -6,7 +6,9 @@
 
 extern crate core;
 
+
 mod pio;
+mod rtt;
 
 
 use core::prelude::*;
@@ -15,6 +17,7 @@ use pio::{
 	P27,
 	PIO_B,
 };
+use rtt::*;
 
 
 // These are a few language items that are required by the core library. The
@@ -73,11 +76,6 @@ pub static VECTOR_TABLE: VectorTable = VectorTable {
 	reset_handler              : start,
 	other_interrupt_vectors    : [0; 44],
 };
-
-
-// Addresses of several registers used to control the real-time timer.
-const TIMER_MODE_REGISTER : *mut   u32 = 0x400E1A30 as *mut   u32;
-const TIMER_VALUE_REGISTER: *const u32 = 0x400E1A38 as *const u32;
 
 
 // This function is the entry point for our application and the handler function

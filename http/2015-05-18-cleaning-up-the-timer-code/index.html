@@ -57,9 +57,9 @@ const TIMER_VALUE_REGISTER: *const u32 = 0x400E1A38 as *const u32;
 			</pre>
 
 			<p>
-				The timer mode register consists of two halves (consisting of 16
-				bits each): Only the lower half is of concern to us. It is used
-				to set the Real-time Timer Prescaler Value (RTPRES).
+				The timer mode register consists of two halves (16 bits each):
+				Only the lower half is of concern to us. It is used to set the
+				Real-time Timer Prescaler Value (RTPRES).
 			</p>
 
 			<p>
@@ -68,24 +68,24 @@ const TIMER_VALUE_REGISTER: *const u32 = 0x400E1A38 as *const u32;
 				(SCLK)<a class="footnote" href="#note-4">[4]</a>, which is the
 				only permanently running clock in the
 				system<a class="footnote" href="#note-5">[5]</a>. This means
-				that while other clocks might be disabled, if the system enters
+				that while other clocks might be disabled when the system enters
 				a low-power mode, the slow clock will keep running and can be
-				used to wake the system back up.
+				used to wake the system up again.
 			</p>
 
 			<p>
-				None of this is very relevant for us right now, though. What we
-				have to know is that the Slow Clock runs at a frequency of
-				32,768 Hz. However, the Real-time timer is not updated at that
-				frequency. If it were, the timer value register would overflow
-				every ~36 hours<a class="footnote" href="#note-6">[6]</a>, which
-				might be too often, depending on the application.
+				None of this is very relevant for us right now. What we need to
+				know is that the Slow Clock runs at a frequency of 32,768 Hz.
+				However, the Real-time timer is not updated at that frequency.
+				If it were, the timer value register would overflow every ~36
+				hours<a class="footnote" href="#note-6">[6]</a>, which might be
+				too often, depending on the application.
 			</p>
 
 			<p>
 				To solve this problem, the RTT allows us to set the prescaler
-				value. For example, setting that value to 2 would divide the
-				update rate by half, giving us overflows about every 73 hours
+				value. The update rate is divided by the prescaler value. For
+				example, a value of 2 gives us overflows roughly every 73 hours
 				while halving our timer accuracy.
 			</p>
 
@@ -94,7 +94,7 @@ const TIMER_VALUE_REGISTER: *const u32 = 0x400E1A38 as *const u32;
 				high accuracy. And unless we plan to blink that LED continuously
 				for many days, neither do we care about an overflow of the timer
 				register<a class="footnote" href="#note-7">[7]</a>. For
-				convenience I opted to set the prescaler value to 32 (0x20 in
+				convenience, I opted to set the prescaler value to 32 (0x20 in
 				hexadecimal<a class="footnote" href="#note-8">[8]</a>). That
 				gives us a resolution of around one millisecond.
 			</p>
@@ -123,9 +123,9 @@ fn sleep_ms(milliseconds: u32) {
 			<ul>
 				<li>
 					This technique is called busy waiting and it requires a lot 
-					of power, as the CPU is constantly busy. It would be much
-					better to change into a power-saving mode and wake up via
-					interrupt when the time has come.
+					of power, as the CPU is constantly busy during the wait. It
+					would be much better to change into a power-saving mode and
+					wake up via interrupt when the right time has come.
 				</li>
 				<li>
 					It doesn't take the aforementioned overflow of the timer
@@ -133,24 +133,24 @@ fn sleep_ms(milliseconds: u32) {
 					account<a class="footnote" href="#note-9">[9]</a>.
 				</li>
 				<li>
-					It isn't completely accurate. With our prescaler value, the
-					timer value register updates 1024 times a second, which
-					means the function will wake up a bit too early.
+					It isn't completely accurate. With our prescaler value of
+					32, the timer value register updates 1024 times a second,
+					which means the function will wake up a bit too early.
 				</li>
 			</ul>
 
 			<p>
-				Since all we're doing right now is blinking an LED, none of
-				those shortcomings are really relevant right now. At some point
-				in the future, we are going to need a more robust implementation
-				of this function. For now, it is good enough, however.
+				Since all we're doing right now is blink an LED, none of those
+				shortcomings are really relevant for us. At some point in the
+				future, we are going to need a more robust implementation of
+				this function. But for now, it is good enough.
 			</p>
 
 			<p>
-				While I'm quite happy (for now) with the generally low quality
-				of our wait function, I still wanted to do a tiny bit of
-				cleaning up. First, let's create a struct for accessing all of
-				the available RTT registers:
+				While I'm (currently) quite happy with the generally low quality
+				of our wait function, I still want to do a tiny bit of cleaning
+				up. First, let's create a struct for accessing all of the
+				available RTT registers:
 			</p>
 
 			<pre>
@@ -163,9 +163,9 @@ pub struct Rtt {
 			</pre>
 
 			<p>
-				As you can see by the number of registers here, RTT is much
-				simpler than PIO. There's also just one Real-time Timer, so we
-				only need to define one address for that:
+				As you can see by the number of registers, RTT is much simpler
+				than PIO. There's also just one Real-time Timer, so we only need
+				to define one constant for its address:
 			</p>
 
 			<pre>
@@ -251,7 +251,7 @@ fn sleep_ms(milliseconds: u32) {
 				<span class="footnote-number">[7]</span>
 				<p>
 					Of course, once we get to more serious applications, we will
-					have to think a bit deeper about the overflow issues.
+					have to think a bit deeper about the overflow issue.
 				</p>
 
 				<a name="note-8"></a>
@@ -269,8 +269,8 @@ fn sleep_ms(milliseconds: u32) {
 				<p>
 					You might think that it does, but that would just mean you
 					need to read up on
-					<a href="https://github.com/rust-lang/rfcs/blob/master/text/0560-integer-overflow.md">integer
-					overflows in Rust</a>.
+					<a href="https://github.com/rust-lang/rfcs/blob/master/text/0560-integer-overflow.md">how
+					Rust handles integer overflows</a>.
 				</p>
 			</footer>
 

@@ -143,7 +143,7 @@ fn sleep_ms(milliseconds: u32) {
 	//       timekeeping.
 	// TODO: Even though it might look that way to the untrained eye, this
 	//       function doesn't take overflow into account. Rust's behavior in
-	//       debug mode is to panic, if an integer roperation overflows. While
+	//       debug mode is to panic, if an integer operation overflows. While
 	//       this code should work when compiled in release mode, it would be
 	//       much nicer and more reliable to explicitly use wrapping integers.
 	unsafe {

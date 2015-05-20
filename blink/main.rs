@@ -19,7 +19,7 @@ use pio::{
 	P27,
 	PIO_B,
 };
-use rtt::*;
+use rtt::RTT;
 
 
 // This is the top of the stack, as provided to us by the linker.

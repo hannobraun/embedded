@@ -8,7 +8,7 @@
 // PIO registers. See Datasheet, chapter 31.7.
 // TODO: I'm not sure what guarantees the compiler makes about the memory layout
 //       of structs. Do I have to use #[repr(C)] or something similar?
-pub struct Pio {
+pub struct Controller {
 	pub pio_enable : u32,
 	pub pio_disable: u32,
 	pub pio_status : u32,
@@ -91,12 +91,12 @@ pub struct Pio {
 
 
 // Addresses of the PIO controllers. See chapters 31.7 and 31.7.1.
-pub const PIO_A: *mut Pio = 0x400E0E00 as *mut Pio;
-pub const PIO_B: *mut Pio = 0x400E1000 as *mut Pio;
-pub const PIO_C: *mut Pio = 0x400E1200 as *mut Pio;
-pub const PIO_D: *mut Pio = 0x400E1400 as *mut Pio;
-pub const PIO_E: *mut Pio = 0x400E1600 as *mut Pio;
-pub const PIO_F: *mut Pio = 0x400E1800 as *mut Pio;
+pub const PIO_A: *mut Controller = 0x400E0E00 as *mut Controller;
+pub const PIO_B: *mut Controller = 0x400E1000 as *mut Controller;
+pub const PIO_C: *mut Controller = 0x400E1200 as *mut Controller;
+pub const PIO_D: *mut Controller = 0x400E1400 as *mut Controller;
+pub const PIO_E: *mut Controller = 0x400E1600 as *mut Controller;
+pub const PIO_F: *mut Controller = 0x400E1800 as *mut Controller;
 
 
 // Bit flags for the various I/O pins of each controller. This is described in

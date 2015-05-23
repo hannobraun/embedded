@@ -20,6 +20,9 @@ pub fn start() {
 		// Continuously set and clear output on pin 27 of PIO_B (pin 13 on the
 		// Arduino Due). This blinks the Due's built-in LED, which is the single
 		// purpose of this program.
+		// TODO: Since we're not doing anything about the watchdog, the program
+		//       is being restarted every 17-18 seconds. This messes up our nice
+		//       blinking pattern.
 		loop {
 			(*PIO_B).set_output_data = P27;
 			sleep_ms(200);

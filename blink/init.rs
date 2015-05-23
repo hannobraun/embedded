@@ -1,3 +1,6 @@
+// Initialization code and entry point for the program.
+
+
 #![feature(core, intrinsics, lang_items, no_std)]
 
 #![no_main]

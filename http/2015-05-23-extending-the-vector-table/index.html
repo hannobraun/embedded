@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>embedded.hannobraun.de</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+	</head>
+
+	<body>
+		<main>
+			<p class="date">2015-05-23</p>
+			<h1>Extending the Vector Table</h1>
+
+			<p>
+				Back when we <a href="/2015-04-25-declaring-independence">added
+				the vector table</a>, I opted to only to the bare minimum. The
+				only interrupt handler that was defined was the reset handler.
+			</p>
+
+			<p>
+				I think it is time to change that and provide a full definition
+				of the vector table:
+			</p>
+
+			<pre>
+pub struct VectorTable {
+	pub initial_stack_pointer: &amp;'static u32,
+
+	pub on_reset: fn(),
+
+	pub _reserved_1: [u32; 1],
+
+	pub on_hard_fault             : fn(),
+	pub on_memory_management_fault: fn(),
+	pub on_bus_fault              : fn(),
+	pub on_usage_fault            : fn(),
+
+	pub _reserved_2: [u32; 4],
+
+	pub on_sv_call: fn(),
+
+	pub _reserved_3: [u32; 2],
+
+	pub on_pend_sv: fn(),
+	pub on_systick: fn(),
+
+	pub on_irq0 : fn(),
+	pub on_irq1 : fn(),
+	pub on_irq2 : fn(),
+	pub on_irq3 : fn(),
+	pub on_irq4 : fn(),
+	pub on_irq5 : fn(),
+	pub on_irq6 : fn(),
+	pub on_irq7 : fn(),
+	pub on_irq8 : fn(),
+	pub on_irq9 : fn(),
+	pub on_irq10: fn(),
+	pub on_irq11: fn(),
+	pub on_irq12: fn(),
+	pub on_irq13: fn(),
+	pub on_irq14: fn(),
+	pub on_irq15: fn(),
+	pub on_irq16: fn(),
+	pub on_irq17: fn(),
+	pub on_irq18: fn(),
+	pub on_irq19: fn(),
+	pub on_irq20: fn(),
+	pub on_irq21: fn(),
+	pub on_irq22: fn(),
+	pub on_irq23: fn(),
+	pub on_irq24: fn(),
+	pub on_irq25: fn(),
+	pub on_irq26: fn(),
+	pub on_irq27: fn(),
+	pub on_irq28: fn(),
+	pub on_irq29: fn(),
+}
+
+unsafe impl Sync for VectorTable {}
+			</pre>
+
+			<p>
+				This is the our representation of the vector table as a Rust
+				struct<a class="footnote" href="#note-1">[1]</a>. Since we're
+				not yet using any of the new interrupts I've added here, I'm not
+				going to explain them now. I think it makes more sense to go
+				into them in detail when we actually have a reason to.
+			</p>
+
+			<p>
+				The above definition only tells our program what the vector
+				table looks like. We still need to initialize it with actual
+				values:
+			</p>
+
+			<pre>
+#[link_section=".vectors"]
+pub static VECTOR_TABLE: VectorTable = VectorTable {
+	initial_stack_pointer: &amp;_estack,
+
+	on_reset: on_reset,
+
+	_reserved_1: [0; 1],
+
+	on_hard_fault             : abort,
+	on_memory_management_fault: abort,
+	on_bus_fault              : abort,
+	on_usage_fault            : abort,
+
+	_reserved_2: [0; 4],
+
+	on_sv_call: abort,
+
+	_reserved_3: [0; 2],
+
+	on_pend_sv: abort,
+	on_systick: abort,
+
+	on_irq0 : abort,
+	on_irq1 : abort,
+	on_irq2 : abort,
+	on_irq3 : abort,
+	on_irq4 : abort,
+	on_irq5 : abort,
+	on_irq6 : abort,
+	on_irq7 : abort,
+	on_irq8 : abort,
+	on_irq9 : abort,
+	on_irq10: abort,
+	on_irq11: abort,
+	on_irq12: abort,
+	on_irq13: abort,
+	on_irq14: abort,
+	on_irq15: abort,
+	on_irq16: abort,
+	on_irq17: abort,
+	on_irq18: abort,
+	on_irq19: abort,
+	on_irq20: abort,
+	on_irq21: abort,
+	on_irq22: abort,
+	on_irq23: abort,
+	on_irq24: abort,
+	on_irq25: abort,
+	on_irq26: abort,
+	on_irq27: abort,
+	on_irq28: abort,
+	on_irq29: abort,
+};
+			</pre>
+
+			<p>
+				Compared to before, two things have changed:
+			</p>
+
+			<ul>
+				<li>
+					We're using a dedicated reset handler, <code>on_reset</code>
+					to handle the reset interrupt. Before we used the start
+					function directly.
+				</li>
+				<li>
+					A handler for all the other interrupts has been added. I've
+					decided to use an abort function for all of these for now.
+					Eventually, we'll need something more sensible, of course.
+				</li>
+			</ul>
+
+			<pre>
+fn on_reset() {
+	main::start()
+}
+			</pre>
+
+			<p>
+				The <code>on_reset</code> handler calls directly int our start
+				function, which I've moved to a different module (to cleanly
+				separate the initialization code from the program logic).
+			</p>
+
+			<p>
+				So why this extra bit of indirection? Well, traditionally, some
+				initialization code would need to be run on every reset. It's
+				not being run right now, but if it were, this would be the place
+				to do it. I actually explained this
+				<a href="/2015-04-25-declaring-independence">back in the
+				day</a>. For a more detailed explanation, you can check out the
+				<a href="https://github.com/hannobraun/embedded/blob/3f0ab3ada1786eca809a6c714e6b9ae65aad7ca7/blink/init.rs#L149">comments
+				in the source code</a>.
+			</p>
+
+			<p>
+				Let's go on to the final missing piece:
+			</p>
+
+			<pre>
+fn abort() {
+	loop {}
+}
+			</pre>
+
+			<p>
+				This is the handler function for all the interrupts we aren't
+				handling right now. It stops the program by just looping
+				forever. At some point we'll need something better, but this is
+				good enough for now.
+			</p>
+
+			<p>
+				That's it for today. As always, the full code is available
+				<a href="https://github.com/hannobraun/embedded">on GitHub</a>.
+				See you next time!
+			</p>
+
+			<hr />
+
+			<footer>
+				<a name="note-1"></a>
+				<span class="footnote-number">[1]</span>
+				<p>
+					See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a>, chapter 10.6.4.
+				</p>
+			</footer>
+
+			<hr />
+		</main>
+
+		<footer>
+			<p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+		</footer>
+	</body>
+</html>

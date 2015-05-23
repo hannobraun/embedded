@@ -35,8 +35,8 @@ extern {
 // length could cause all kinds of problems (imagine if it was too short, and
 // the linker would place something else directly after it).
 pub struct VectorTable {
-	pub initial_stack_pointer_value: &'static u32,
-	pub on_reset                   : fn(),
+	pub initial_stack_pointer: &'static u32,
+	pub on_reset             : fn(),
 
 	pub other_interrupt_vectors: [u32; 44],
 }
@@ -52,9 +52,9 @@ pub static VECTOR_TABLE: VectorTable = VectorTable {
 	// TODO: Find out why this is &_estack and not just _estack. I was able to
 	//       find documentation stating this fact, but offering no explanation.
 	//       See http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0803b/CHDBIJJD.html
-	initial_stack_pointer_value: &_estack,
-	on_reset                   : on_reset,
-	other_interrupt_vectors    : [0; 44],
+	initial_stack_pointer  : &_estack,
+	on_reset               : on_reset,
+	other_interrupt_vectors: [0; 44],
 };
 
 

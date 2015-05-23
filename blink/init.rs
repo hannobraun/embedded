@@ -12,8 +12,13 @@ extern crate core;
 
 mod main;
 
-mod pio;
-mod rtt;
+pub mod hardware {
+	// Basic definition of the hardware's features
+	pub mod base {
+		pub mod pio;
+		pub mod rtt;
+	}
+}
 
 pub mod rust_base;
 

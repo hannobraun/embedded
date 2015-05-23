@@ -1,8 +1,8 @@
-use pio::{
+use hardware::base::pio::{
 	P27,
 	PIO_B,
 };
-use rtt::RTT;
+use hardware::base::rtt::RTT;
 
 
 // This function is the entry point for our application and the handler function

@@ -164,9 +164,10 @@ fn on_reset() {
 	//       2. Just copy the .relocate segment like any sane microcontroller
 	//          program would do. This would definitely be a safe solution, and
 	//          the only reason I'm not doing it right now is that it reeks of
-	//          cargo cult. I'd rather be bitten from not doing it and then have
-	//          a good understanding of why I'm doing it afterwards, than just
-	//          do it from the start without really understanding the reason.
+	//          cargo cult. I'd rather be bitten from not doing it and gain a
+	//          better have understanding of why I'm doing it afterwards, than
+	//          just do it from the start without really understanding the
+	//          reason.
 	// TODO: This function doesn't initialize the .bss segment to zero, as init
 	//       code would normally do. This doesn't make any difference right now,
 	//       because there are no uninitialized global variables in this

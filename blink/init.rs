@@ -36,7 +36,7 @@ extern {
 // the linker would place something else directly after it).
 pub struct VectorTable {
 	pub initial_stack_pointer_value: &'static u32,
-	pub reset_handler              : fn(),
+	pub on_reset                   : fn(),
 
 	pub other_interrupt_vectors: [u32; 44],
 }
@@ -53,7 +53,7 @@ pub static VECTOR_TABLE: VectorTable = VectorTable {
 	//       find documentation stating this fact, but offering no explanation.
 	//       See http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0803b/CHDBIJJD.html
 	initial_stack_pointer_value: &_estack,
-	reset_handler              : on_reset,
+	on_reset                   : on_reset,
 	other_interrupt_vectors    : [0; 44],
 };
 

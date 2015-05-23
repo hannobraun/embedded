@@ -176,7 +176,7 @@ fn on_reset() {
 	//          understanding, C doesn't guarantee that variables are
 	//          initialized with any given value, so why should global variables
 	//          be different?
-	//       2. Even if there is a good reasons (as there probably is), I don't
+	//       2. Even if there is a good reason (as there probably is), I don't
 	//          think global variables are such a hot idea, so I don't want to
 	//          do anything that supports them, out of pure stubbornness.
 

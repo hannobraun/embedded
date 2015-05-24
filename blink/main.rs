@@ -2,8 +2,6 @@ use hardware::api::pio;
 use hardware::base::rtt::RTT;
 
 
-// This function is the entry point for our application and the handler function
-// for the reset interrupt.
 pub fn start() {
 	// Pin 27 of the PIOB parallel I/O controller corresponds to pin 13 on the
 	// Arduino Due, which is the built-in LED (labelled "L").

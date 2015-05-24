@@ -14,11 +14,9 @@ pub fn start() {
 		// the Arduino Due, which is the built-in LED (labelled "L").
 		let led = pio::b().pin_27();
 
-		led.enable();
-
-		// Enable pin 27 of PIO_B (pin 13 on the Arduino Due) and configure it
-		// for output.
-		(*PIO_B).output_enable = P27;
+		led
+			.enable()
+			.enable_output();
 
 		// Set the timer to a resolution of a millisecond.
 		(*RTT).mode = 0x00000020;

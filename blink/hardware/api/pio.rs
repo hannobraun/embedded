@@ -64,8 +64,17 @@ impl<OutputStatus> Pin<StatusUndefined, OutputStatus> {
 	}
 }
 
+impl Pin<StatusEnabled, OutputStatusUndefined> {
+	pub fn enable_output(self) -> Pin<StatusEnabled, OutputStatusEnabled> {
+		unsafe { (*self.controller).output_enable = self.mask };
+
+		Pin::new(self.mask, self.controller)
+	}
+}
+
 
 pub struct StatusUndefined;
 pub struct StatusEnabled;
 
 pub struct OutputStatusUndefined;
+pub struct OutputStatusEnabled;

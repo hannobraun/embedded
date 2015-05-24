@@ -19,6 +19,11 @@ pub mod hardware {
 		pub mod pio;
 		pub mod rtt;
 	}
+
+	// High-level API to the hardware
+	pub mod api {
+		pub mod pio;
+	}
 }
 
 pub mod rust_base;

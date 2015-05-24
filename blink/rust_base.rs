@@ -10,10 +10,14 @@
 pub extern fn panic_fmt() { loop {} }
 
 #[lang = "stack_exhausted"]
-pub extern fn stack_exhausted() { loop {} }
+pub extern fn stack_exhausted() {
+	panic!("Stack exhausted");
+}
 
 #[lang = "eh_personality"]
-pub extern fn eh_personality() { loop {} }
+pub extern fn eh_personality() {
+	panic!("eh_personality function has been called")
+}
 
 
 // I'm not 100% sure what this function does, but references to it are compiled

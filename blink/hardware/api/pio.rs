@@ -72,6 +72,16 @@ impl Pin<StatusEnabled, OutputStatusUndefined> {
 	}
 }
 
+impl Pin<StatusEnabled, OutputStatusEnabled> {
+	pub fn set_output(&self) {
+		unsafe { (*self.controller).set_output_data = self.mask };
+	}
+
+	pub fn clear_output(&self) {
+		unsafe { (*self.controller).clear_output_data = self.mask };
+	}
+}
+
 
 pub struct StatusUndefined;
 pub struct StatusEnabled;

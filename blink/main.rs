@@ -1,8 +1,4 @@
 use hardware::api::pio;
-use hardware::base::pio::{
-	P27,
-	PIO_B,
-};
 use hardware::base::rtt::RTT;
 
 
@@ -14,23 +10,20 @@ pub fn start() {
 		// the Arduino Due, which is the built-in LED (labelled "L").
 		let led = pio::b().pin_27();
 
-		led
+		let led = led
 			.enable()
 			.enable_output();
 
 		// Set the timer to a resolution of a millisecond.
 		(*RTT).mode = 0x00000020;
 
-		// Continuously set and clear output on pin 27 of PIO_B (pin 13 on the
-		// Arduino Due). This blinks the Due's built-in LED, which is the single
-		// purpose of this program.
 		// TODO: Since we're not doing anything about the watchdog, the program
 		//       is being restarted every 17-18 seconds. This messes up our nice
 		//       blinking pattern.
 		loop {
-			(*PIO_B).set_output_data = P27;
+			led.set_output();
 			sleep_ms(200);
-			(*PIO_B).clear_output_data = P27;
+			led.clear_output();
 			sleep_ms(800);
 		}
 	}

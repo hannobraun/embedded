@@ -5,27 +5,25 @@ use hardware::base::rtt::RTT;
 // This function is the entry point for our application and the handler function
 // for the reset interrupt.
 pub fn start() {
-	unsafe {
-		// Pin 27 of the PIOB parallel I/O controller corresponds to pin 13 on
-		// the Arduino Due, which is the built-in LED (labelled "L").
-		let led = pio::b().pin_27();
+	// Pin 27 of the PIOB parallel I/O controller corresponds to pin 13 on the
+	// Arduino Due, which is the built-in LED (labelled "L").
+	let led = unsafe { pio::b().pin_27() };
 
-		let led = led
-			.enable()
-			.enable_output();
+	let led = led
+		.enable()
+		.enable_output();
 
-		// Set the timer to a resolution of a millisecond.
-		(*RTT).mode = 0x00000020;
+	// Set the timer to a resolution of a millisecond.
+	unsafe { (*RTT).mode = 0x00000020; }
 
-		// TODO: Since we're not doing anything about the watchdog, the program
-		//       is being restarted every 17-18 seconds. This messes up our nice
-		//       blinking pattern.
-		loop {
-			led.set_output();
-			sleep_ms(200);
-			led.clear_output();
-			sleep_ms(800);
-		}
+	// TODO: Since we're not doing anything about the watchdog, the program is
+	//       being restarted every 17-18 seconds. This messes up our nice
+	//       blinking pattern.
+	loop {
+		led.set_output();
+		sleep_ms(200);
+		led.clear_output();
+		sleep_ms(800);
 	}
 }
 

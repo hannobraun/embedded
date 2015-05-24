@@ -7,6 +7,7 @@
 #![no_std]
 
 
+#[macro_use]
 extern crate core;
 
 
@@ -190,5 +191,5 @@ fn on_reset() {
 
 // Used as a handler function for all interrupts we don't want to handle yet.
 fn abort() {
-	loop {}
+	panic!("Unhandled interrupt");
 }

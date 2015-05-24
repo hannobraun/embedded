@@ -7,7 +7,10 @@
 // Therefore it can't know how to handle program panics and the like.
 
 #[lang = "panic_fmt"]
-pub extern fn panic_fmt() { loop {} }
+pub extern fn panic_fmt() {
+	// TODO: Print a message to debug output, if available and reset the system.
+	loop {}
+}
 
 #[lang = "stack_exhausted"]
 pub extern fn stack_exhausted() {

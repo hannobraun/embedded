@@ -59,7 +59,6 @@ impl<Status, OutputStatus> Pin<Status, OutputStatus> {
 impl<OutputStatus> Pin<StatusUndefined, OutputStatus> {
 	pub fn enable(self) -> Pin<StatusEnabled, OutputStatus> {
 		unsafe { (*self.controller).pio_enable = self.mask };
-
 		Pin::new(self.mask, self.controller)
 	}
 }
@@ -67,7 +66,6 @@ impl<OutputStatus> Pin<StatusUndefined, OutputStatus> {
 impl Pin<StatusEnabled, OutputStatusUndefined> {
 	pub fn enable_output(self) -> Pin<StatusEnabled, OutputStatusEnabled> {
 		unsafe { (*self.controller).output_enable = self.mask };
-
 		Pin::new(self.mask, self.controller)
 	}
 }

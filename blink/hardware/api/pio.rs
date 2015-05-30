@@ -63,6 +63,10 @@ impl<Status, OutputStatus> Pin<Status, OutputStatus> {
 	}
 }
 
+// TODO: This type parameters for this implementation block may not be correct.
+//       They assume that the output status is preserved when a pin is disabled
+//       or enabled. This may not be the case. It might be safer to always
+//       return a pin with OutputStatusUndefined.
 impl<OutputStatus> Pin<StatusUndefined, OutputStatus> {
 	pub fn enable(self) -> Pin<StatusEnabled, OutputStatus> {
 		unsafe { (*self.controller).pio_enable = self.mask };

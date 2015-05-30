@@ -8,7 +8,8 @@
 
 #[lang = "panic_fmt"]
 pub extern fn panic_fmt() {
-	// TODO: Print a message to debug output, if available and reset the system.
+	// TODO: Print a message to serial output, if available and reset the
+	//       system.
 	loop {}
 }
 

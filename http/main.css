@@ -75,3 +75,7 @@ main footer p {
 code, pre {
 	background-color: #ccccff;
 }
+
+pre.wrap {
+    white-space: pre-wrap;
+}

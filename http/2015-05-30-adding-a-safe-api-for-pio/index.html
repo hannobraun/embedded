@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>embedded.hannobraun.de</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+	</head>
+
+	<body>
+		<main>
+			<p class="date">2015-05-30</p>
+			<h1>Adding a Safe API for PIO</h1>
+
+			<p>
+				A few weeks ago, we
+				<a href="/2015-05-17-cleaning-up-parallel-io">cleaned up
+				parallel I/O</a> by adding a module that allows low-level access
+				to that feature. This is useful, but we can do better. At the
+				very least, we could write write a wrapper around it that
+				reduces the need to use <code>unsafe</code> blocks. However, we
+				can do even better than that.
+			</p>
+
+			<p>
+				Rust's type system allows us to write APIs that largely ensure
+				at compile time that the API is used correctly. In a lot of
+				languages, trying to use a thing before initializing it would,
+				at best, result in a runtime exception or, at worst, just
+				silently not work. Rust allows us to write APIs in such a way,
+				that a program containing such an error wouldn't even compile.
+			</p>
+
+			<p>
+				Before I get right into it, a few remarks:
+			</p>
+
+			<ul>
+				<li>
+					This is just a first draft. I'm quite pleased with it
+					already, but I'm sure there will be many revisions to it in
+					the future.
+				</li>
+				<li>
+					I've decided to only cover features that we're actively
+					using in our blink program.. Whenever we will do something
+					new with parallel I/O, we will have to extend the API.
+				</li>
+			</ul>
+
+			<p>
+				But enough introduction. Let's take a look:
+			</p>
+
+			<pre>
+pub fn a() -> Controller { Controller(pio::PIO_A) }
+pub fn b() -> Controller { Controller(pio::PIO_B) }
+pub fn c() -> Controller { Controller(pio::PIO_C) }
+pub fn d() -> Controller { Controller(pio::PIO_D) }
+pub fn e() -> Controller { Controller(pio::PIO_E) }
+pub fn f() -> Controller { Controller(pio::PIO_F) }
+			</pre>
+
+			<p>
+				For each PIO
+				controller<a class="footnote" href="#note-1">[1]</a>, there's a
+				function to retrieve it. As you can see, the wrapper module
+				accesses the
+				<a href="https://github.com/hannobraun/embedded/blob/92652977fab574c5423ba8ecd4d965672d185b76/blink/hardware/base/pio.rs">low-level
+				PIO module</a> via the <code>pio::</code> prefix.
+			</p>
+
+			<pre>
+pub struct Controller(*mut pio::Controller);
+
+impl Controller {
+	pub unsafe fn pin_27(&amp;self) -> Pin&lt;StatusUndefined, OutputStatusUndefined&gt; {
+		let &amp;Controller(controller) = self;
+		Pin::new(pio::P27, controller)
+	}
+}
+			</pre>
+
+			<p>
+				<code>Controller</code> wraps the low-level
+				<code>pio::Controller</code>, but doesn't directly provide
+				access to its features. Instead, it provides access to the
+				controller's pins. There are two things to note here:
+			</p>
+
+			<ol>
+				<li>
+					Only a single pin can be retrieved. As that's all we need
+					for now, I decided to leave it at that. Repeating that
+					method 32 times by hand would be too error-prone, and I
+					didn't want to introduce a macro at this time (although I'm
+					sure I will do so later).
+				</li>
+				<li>
+					The method that retrieves the pin is marked
+					<code>unsafe</code>. The <code>Pin</code> type encodes the
+					pin's current status to enable compile-time error checking.
+					The user can circumvent that protection by creating multiple
+					<code>Pin</code> structs for a single pin. The
+					<code>unsafe</code> marks this as an error-prone operation
+					that needs to be reviewed carefully.
+				</li>
+			</ol>
+
+			<p>
+				Here's the <code>Pin</code> type:
+			</p>
+
+			<pre>
+pub struct Pin&lt;Status, OutputStatus&gt; {
+	mask      : u32,
+	controller: *mut pio::Controller,
+
+	status       : PhantomData&lt;Status&gt;,
+	output_status: PhantomData&lt;OutputStatus&gt;,
+}
+			</pre>
+
+			<p>
+				It contains the pin's mask and a pointer to the controller to be
+				able to perform I/O operations. The more interesting element are
+				the type parameters though. They encode, statically at
+				compile-time, the pin's general status (is it enabled or not)
+				and the pin's output status (is it configured for input or
+				output).
+			</p>
+
+			<p>
+				If you take a look at the <code>Controller</code> code above,
+				you'll see that both are initially undefined. That's because we
+				can't really know whether the pin was used before, or even what
+				status a given pin has after system
+				reset<a class="footnote" href="#note-2">[2]</a>.
+			</p>
+
+			<p>
+				As Rust disallows unused type parameters, but we don't really
+				have a use for those type parameters within the data structure,
+				we need to add those two dummy fields of type
+				<a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html"><code>PhantomData</code></a>.
+			</p>
+
+			<pre>
+impl&lt;Status, OutputStatus&gt; Pin&lt;Status, OutputStatus&gt; {
+	fn new(mask: u32, controller: *mut pio::Controller)
+		-> Pin&lt;Status, OutputStatus&gt;
+	{
+		Pin {
+			mask      : mask,
+			controller: controller,
+
+			status       : PhantomData,
+			output_status: PhantomData,
+		}
+	}
+}
+			</pre>
+
+			<p>
+				This is the first implementation block for <code>Pin</code>,
+				which contains the constructor. As you can see from the two type
+				parameters after <code>impl</code>, this implementation block is
+				fully generic. This means <code>new</code> method can be used to
+				create <code>Pin</code>s with any status. This is ok, as the
+				constructor is not public and just used internally.
+			</p>
+
+			<pre>
+impl&lt;OutputStatus&gt; Pin&lt;StatusUndefined, OutputStatus&gt; {
+	pub fn enable(self) -> Pin&lt;StatusEnabled, OutputStatus&gt; {
+		unsafe { (*self.controller).pio_enable = self.mask };
+		Pin::new(self.mask, self.controller)
+	}
+}
+			</pre>
+
+			<p>
+				This implementation block only applies to pins with an undefined
+				status, but doesn't put restrictions on the output status. For
+				these pins, the <code>enable</code> method is defined.
+			</p>
+
+			<p>
+				There are two things that are important to understand about this
+				construct:
+			</p>
+
+			<ol>
+				<li>
+					The <code>enable</code> method encodes what it's doing at
+					the type level. For example, if you call <code>enable</code>
+					on a
+					<code>Pin&lt;StatusUndefined, OutputStatusUndefined&gt;</code>,
+					you will get back a
+					<code>Pin&lt;StatusEnabled, OutputStatusUndefined&gt;</code>.
+					You can't call it on pins that are already enabled.
+				</li>
+				<li>
+					As <code>enable</code> takes the <code>self</code> argument
+					by value, the old pin is being consumed by it, due to Rust's
+					move semantics. That means you can't keep a copy of your old
+					<code>Pin</code> and use it to trick the API into doing
+					stuff that's not supposed to be possible.
+				</li>
+			</ol>
+
+			<p>
+				I'm not actually sure whether this block is entirely correct
+				though. It assumes that the output status is always preserved,
+				that you can just take a pin whose status you know nothing
+				about, enable it and assume that the output status is the same
+				as it was before. I don't know if that's a safe assumption. I'll
+				have to test this at some point.
+			</p>
+
+			<pre>
+impl Pin&lt;StatusEnabled, OutputStatusUndefined&gt; {
+	pub fn enable_output(self) -> Pin&lt;StatusEnabled, OutputStatusEnabled&gt; {
+		unsafe { (*self.controller).output_enable = self.mask };
+		Pin::new(self.mask, self.controller)
+	}
+}
+			</pre>
+
+			<p>
+				The next implementation block allows you to enable pin output.
+				Note that it's only defined for enabled pins with an undefined
+				output status. This API makes it impossible to configure output
+				on a pin that you forgot to enable. A program attempting to do
+				this just won't compile.
+			</p>
+
+			<pre>
+impl Pin&lt;StatusEnabled, OutputStatusEnabled&gt; {
+	pub fn set_output(&amp;self) {
+		unsafe { (*self.controller).set_output_data = self.mask };
+	}
+
+	pub fn clear_output(&amp;self) {
+		unsafe { (*self.controller).clear_output_data = self.mask };
+	}
+}
+			</pre>
+
+			<p>
+				If you've enabled your <code>Pin</code> and enabled its output,
+				you can control the output signal using those two methods.
+			</p>
+
+			<pre>
+pub struct StatusUndefined;
+pub struct StatusEnabled;
+
+pub struct OutputStatusUndefined;
+pub struct OutputStatusEnabled;
+			</pre>
+
+			<p>
+				And finally, these are the different state types for
+				<code>Pin</code>. Those are just empty structs, which means they
+				are just used as marker types and don't have any footprint at
+				runtime.
+			</p>
+
+			<p>
+				That's the API! As I said, it's incomplete and only provides the
+				bare minimum that is required to support our program. We can
+				extend it as needed in the future.
+			</p>
+
+			<p>
+				Let's take a look at how it's used. You might remember, the
+				<a href="https://github.com/hannobraun/embedded/blob/2cc0197b14561a4c4a3ee61409125221e5875f0c/blink/main.rs">old
+				version of the program using the low-level PIO module</a> had a
+				big unsafe block and dereferenced all those unsafe pointers. The
+				new API makes things a lot nicer.
+			</p>
+
+			<p>
+				The first thing we need to do is getting the <code>Pin</code>
+				instance.
+			</p>
+
+			<pre>
+let led = unsafe { pio::b().pin_27() };
+			</pre>
+
+			<p>
+				As I explained above, this operation is unsafe, as it allows us
+				to retrieve multiple instances for the same pin and circumvent
+				the guarantees of the API that way. It's the only unsafe block
+				that is required to use the new API.
+			</p>
+
+			<pre>
+let led = led
+	.enable()
+	.enable_output();
+			</pre>
+
+			<p>
+				This is the pin initialization code that enables the pin and
+				configures it for output. As <code>enable</code> and
+				<code>enable_output</code> consume the pin, we need to capture
+				the result in a new
+				variable<a class="footnote" href="#note-3">[3]</a>. Otherwise,
+				there would be no way for us to access the enabled pin ever
+				again.
+			</p>
+
+			<pre>
+loop {
+	led.set_output();
+	sleep_ms(200);
+	led.clear_output();
+	sleep_ms(800);
+}
+			</pre>
+
+			<p>
+				And finally, we can set and clear the output, to make the LED
+				blink.
+			</p>
+
+			<p>
+				For any of you who don't believe me that this API basically
+				prevents you from misusing it, here's an example. This is what
+				happens if we leave out the middle part of the program and try
+				to use the LED without initializing it:
+			</p>
+
+			<pre class="wrap">
+blink/main.rs:21:7: 21:19 error: no method named `set_output` found for type `hardware::api::pio::Pin&lt;hardware::api::pio::StatusUndefined, hardware::api::pio::OutputStatusUndefined&gt;` in the current scope
+blink/main.rs:21 		led.set_output();
+                 		    ^~~~~~~~~~~~
+blink/main.rs:23:7: 23:21 error: no method named `clear_output` found for type `hardware::api::pio::Pin&lt;hardware::api::pio::StatusUndefined, hardware::api::pio::OutputStatusUndefined&gt;` in the current scope
+blink/main.rs:23 		led.clear_output();
+                 		    ^~~~~~~~~~~~~~
+error: aborting due to 2 previous errors
+			</pre>
+
+			<p>
+				The methods simply aren't available. Without cheating (i.e.
+				using <code>unsafe</code>), there's just no way to call them
+				unless you properly initialize the pin.
+			</p>
+
+			<p>
+				That's it for today. As always, the full code is available
+				<a href="https://github.com/hannobraun/embedded">on GitHub</a>.
+				See you next time!
+			</p>
+
+			<hr />
+
+			<footer>
+				<a name="note-1"></a>
+				<span class="footnote-number">[1]</span>
+				<p>
+					See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a>, chapter 31.2.
+				</p>
+
+				<a name="note-2"></a>
+				<span class="footnote-number">[2]</span>
+				<p>
+					See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a>, chapter 31.5.2.
+				</p>
+
+				<a name="note-3"></a>
+				<span class="footnote-number">[3]</span>
+				<p>
+					Yes, the new variable is called the same as the old one.
+					It's still a new variable, and it has a different type.
+					Initially <code>led</code> has the type
+					<code>Pin&lt;StatusUndefined, OutputStatusUndefined&gt;</code>.
+					After this operation, the type is
+					<code>Pin&lt;StatusEnabled, OutputStatusEnabled&gt;</code>.
+				</p>
+			</footer>
+
+			<hr />
+		</main>
+
+		<footer>
+			<p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+		</footer>
+	</body>
+</html>

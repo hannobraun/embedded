@@ -20,6 +20,13 @@ impl Controller {
 	/// This function is unsafe, as only one Pin instance should exist per Pin.
 	/// If multiple instances exist, the compiler can not statically enforce the
 	/// correct use of the API.
+	///
+	/// Initially, both the status and the output status are undefined. This has
+	/// two reasons:
+	/// - The pin might have been used before during the program. We don't know
+	///   what status it was left in.
+	/// - After the system has been powered up, we can't rely on pins being in a
+	///   specific state (see data sheet, chapter 31.5.2).
 	pub unsafe fn pin_27(&self) -> Pin<StatusUndefined, OutputStatusUndefined> {
 		let &Controller(controller) = self;
 		Pin::new(pio::P27, controller)

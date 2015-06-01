@@ -20,7 +20,7 @@ pub mod hardware {
 		pub mod rtt;
 	}
 
-	// High-level API to the hardware
+	// Safe API to the hardware's features
 	pub mod safe {
 		pub mod pio;
 	}

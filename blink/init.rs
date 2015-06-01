@@ -21,7 +21,7 @@ pub mod hardware {
 	}
 
 	// High-level API to the hardware
-	pub mod api {
+	pub mod safe {
 		pub mod pio;
 	}
 }

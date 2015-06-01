@@ -1,5 +1,5 @@
-use hardware::api::pio;
 use hardware::base::rtt::RTT;
+use hardware::safe::pio;
 
 
 pub fn start() {

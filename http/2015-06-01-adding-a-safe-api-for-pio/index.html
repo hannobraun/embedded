@@ -14,41 +14,43 @@
 			<p>
 				A few weeks ago, we
 				<a href="/2015-05-17-cleaning-up-parallel-io">cleaned up
-				parallel I/O</a> by adding a module that allows low-level access
-				to that feature. This is useful, but we can do better. At the
-				very least, we could write write a wrapper around it that
-				reduces the need to use <code>unsafe</code> blocks. However, we
-				can do even better than that.
+				parallel I/O</a> by adding
+				<a href="https://github.com/hannobraun/embedded/blob/9d02f046f897da4bc5a73a2ccc9f21a350a87ed7/blink/hardware/base/pio.rs">a
+				module</a> that provides low-level access to that feature. This
+				kind of module is useful, but potentially error-prone. We can do
+				better than that.
 			</p>
 
 			<p>
 				Rust's type system allows us to write APIs that largely ensure
-				at compile time that the API is used correctly. In a lot of
-				languages, trying to use a thing before initializing it would,
-				at best, result in a runtime exception or, at worst, just
-				silently not work. Rust allows us to write APIs in such a way,
-				that a program containing such an error wouldn't even compile.
+				at compile time that the API is being used correctly. In a lot
+				of languages, incorrect use of an API would result in runtime
+				exceptions. Trying to use a feature before enabling it or
+				attempting to write to a file after closing it are examples of
+				this. Rust allows us to write APIs in such a way, that a program
+				containing these errors wouldn't even compile.
 			</p>
 
 			<p>
-				Before I get right into it, a few remarks:
+				Before we take a look at the new API, a few remarks:
 			</p>
 
 			<ul>
 				<li>
-					This is just a first draft. I'm quite pleased with it
-					already, but I'm sure there will be many revisions to it in
-					the future.
+					This is just a first draft. I'm quite happy with it already,
+					but I'm sure there will be many revisions to it in the
+					future.
 				</li>
 				<li>
-					I've decided to only cover features that we're actively
-					using in our blink program.. Whenever we will do something
-					new with parallel I/O, we will have to extend the API.
+					I've decided to leave out any features that we're not
+					actively using in our program right now. When we do
+					something new with parallel I/O, we will extend the API as
+					needed.
 				</li>
 			</ul>
 
 			<p>
-				But enough introduction. Let's take a look:
+				But enough introduction. Let's get started:
 			</p>
 
 			<pre>
@@ -65,7 +67,7 @@ pub fn f() -> Controller { Controller(pio::PIO_F) }
 				controller<a class="footnote" href="#note-1">[1]</a>, there's a
 				function to retrieve it. As you can see, the wrapper module
 				accesses the
-				<a href="https://github.com/hannobraun/embedded/blob/92652977fab574c5423ba8ecd4d965672d185b76/blink/hardware/base/pio.rs">low-level
+				<a href="https://github.com/hannobraun/embedded/blob/9d02f046f897da4bc5a73a2ccc9f21a350a87ed7/blink/hardware/base/pio.rs">low-level
 				PIO module</a> via the <code>pio::</code> prefix.
 			</p>
 
@@ -89,20 +91,20 @@ impl Controller {
 
 			<ol>
 				<li>
-					Only a single pin can be retrieved. As that's all we need
-					for now, I decided to leave it at that. Repeating that
-					method 32 times by hand would be too error-prone, and I
-					didn't want to introduce a macro at this time (although I'm
-					sure I will do so later).
+					Only a pin 27 can be accessed. As that's all we need for
+					now, I decided to leave it at that. Repeating that method 32
+					times by hand would be too error-prone, and I didn't want to
+					introduce a macro at this time (although I'm sure I will do
+					so later).
 				</li>
 				<li>
 					The method that retrieves the pin is marked
 					<code>unsafe</code>. The <code>Pin</code> type encodes the
-					pin's current status to enable compile-time error checking.
-					The user can circumvent that protection by creating multiple
-					<code>Pin</code> structs for a single pin. The
-					<code>unsafe</code> marks this as an error-prone operation
-					that needs to be reviewed carefully.
+					pin's current status to enable compile-time error checking,
+					but the user can circumvent that protection by creating
+					multiple <code>Pin</code> structs for a single pin. The
+					<code>unsafe</code> qualifier marks this as an error-prone
+					operation that needs to be reviewed carefully.
 				</li>
 			</ol>
 
@@ -121,9 +123,9 @@ pub struct Pin&lt;Status, OutputStatus&gt; {
 			</pre>
 
 			<p>
-				It contains the pin's mask and a pointer to the controller to be
-				able to perform I/O operations. The more interesting element are
-				the type parameters though. They encode, statically at
+				It contains the pin's mask and a pointer to the controller, to
+				be able to perform I/O operations. The more interesting element
+				are the type parameters though. They encode, statically at
 				compile-time, the pin's general status (is it enabled or not)
 				and the pin's output status (is it configured for input or
 				output).
@@ -164,9 +166,9 @@ impl&lt;Status, OutputStatus&gt; Pin&lt;Status, OutputStatus&gt; {
 				This is the first implementation block for <code>Pin</code>,
 				which contains the constructor. As you can see from the two type
 				parameters after <code>impl</code>, this implementation block is
-				fully generic. This means <code>new</code> method can be used to
-				create <code>Pin</code>s with any status. This is ok, as the
-				constructor is not public and just used internally.
+				fully generic. This means the <code>new</code> method can be
+				used to create <code>Pin</code>s with any status. This is ok, as
+				the constructor is not public and just used internally.
 			</p>
 
 			<pre>
@@ -192,8 +194,7 @@ impl&lt;OutputStatus&gt; Pin&lt;StatusUndefined, OutputStatus&gt; {
 			<ol>
 				<li>
 					The <code>enable</code> method encodes what it's doing at
-					the type level. For example, if you call <code>enable</code>
-					on a
+					the type level. If you call <code>enable</code> on a
 					<code>Pin&lt;StatusUndefined, OutputStatusUndefined&gt;</code>,
 					you will get back a
 					<code>Pin&lt;StatusEnabled, OutputStatusUndefined&gt;</code>.
@@ -247,8 +248,10 @@ impl Pin&lt;StatusEnabled, OutputStatusEnabled&gt; {
 			</pre>
 
 			<p>
-				If you've enabled your <code>Pin</code> and enabled its output,
-				you can control the output signal using those two methods.
+				The final implementation block provides methods to control the
+				output signal of the pin. The methods that provide this
+				capability are only defined for <code>Pin</code>s that are
+				enabled and whose output is enabled.
 			</p>
 
 			<pre>
@@ -260,7 +263,7 @@ pub struct OutputStatusEnabled;
 			</pre>
 
 			<p>
-				And finally, these are the different state types for
+				Finally, these are the different state types for
 				<code>Pin</code>. Those are just empty structs, which means they
 				are just used as marker types and don't have any footprint at
 				runtime.
@@ -281,7 +284,7 @@ pub struct OutputStatusEnabled;
 			</p>
 
 			<p>
-				The first thing we need to do is getting the <code>Pin</code>
+				The first thing we need to do is to get the <code>Pin</code>
 				instance.
 			</p>
 
@@ -322,8 +325,8 @@ loop {
 			</pre>
 
 			<p>
-				And finally, we can set and clear the output, to make the LED
-				blink.
+				The last missing piece is the meat of our program: The loop that
+				makes the LED blink.
 			</p>
 
 			<p>

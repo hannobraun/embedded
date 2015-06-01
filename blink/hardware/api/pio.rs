@@ -27,7 +27,9 @@ impl Controller {
 	///   what status it was left in.
 	/// - After the system has been powered up, we can't rely on pins being in a
 	///   specific state (see data sheet, chapter 31.5.2).
-	pub unsafe fn pin_27(&self) -> Pin<StatusUndefined, OutputStatusUndefined> {
+	pub unsafe fn pin_27(&self)
+		-> Pin<status::Undefined, output_status::Undefined>
+	{
 		let &Controller(controller) = self;
 		Pin::new(pio::P27, controller)
 	}
@@ -66,22 +68,22 @@ impl<Status, OutputStatus> Pin<Status, OutputStatus> {
 // TODO: This type parameters for this implementation block may not be correct.
 //       They assume that the output status is preserved when a pin is disabled
 //       or enabled. This may not be the case. It might be safer to always
-//       return a pin with OutputStatusUndefined.
-impl<OutputStatus> Pin<StatusUndefined, OutputStatus> {
-	pub fn enable(self) -> Pin<StatusEnabled, OutputStatus> {
+//       return a pin with output_status::Undefined.
+impl<OutputStatus> Pin<status::Undefined, OutputStatus> {
+	pub fn enable(self) -> Pin<status::Enabled, OutputStatus> {
 		unsafe { (*self.controller).pio_enable = self.mask };
 		Pin::new(self.mask, self.controller)
 	}
 }
 
-impl Pin<StatusEnabled, OutputStatusUndefined> {
-	pub fn enable_output(self) -> Pin<StatusEnabled, OutputStatusEnabled> {
+impl Pin<status::Enabled, output_status::Undefined> {
+	pub fn enable_output(self) -> Pin<status::Enabled, output_status::Enabled> {
 		unsafe { (*self.controller).output_enable = self.mask };
 		Pin::new(self.mask, self.controller)
 	}
 }
 
-impl Pin<StatusEnabled, OutputStatusEnabled> {
+impl Pin<status::Enabled, output_status::Enabled> {
 	pub fn set_output(&self) {
 		unsafe { (*self.controller).set_output_data = self.mask };
 	}
@@ -92,8 +94,12 @@ impl Pin<StatusEnabled, OutputStatusEnabled> {
 }
 
 
-pub struct StatusUndefined;
-pub struct StatusEnabled;
+mod status {
+	pub struct Undefined;
+	pub struct Enabled;
+}
 
-pub struct OutputStatusUndefined;
-pub struct OutputStatusEnabled;
+mod output_status {
+	pub struct Undefined;
+	pub struct Enabled;
+}

@@ -1,5 +1,6 @@
 use hardware::base::rtt::RTT;
 use hardware::safe::pio;
+use hardware::safe::rtt::Timer;
 
 
 pub fn start() {
@@ -11,8 +12,7 @@ pub fn start() {
 		.enable()
 		.enable_output();
 
-	// Set the timer to a resolution of a millisecond.
-	unsafe { (*RTT).mode = 0x00000020; }
+	let _timer = Timer::new();
 
 	// TODO: Since we're not doing anything about the watchdog, the program is
 	//       being restarted every 17-18 seconds. This messes up our nice

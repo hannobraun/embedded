@@ -23,6 +23,7 @@ pub mod hardware {
 	// Safe API to the hardware's features
 	pub mod safe {
 		pub mod pio;
+		pub mod rtt;
 	}
 }
 

@@ -34,8 +34,7 @@ impl Timer {
 		unsafe { (*RTT).value }
 	}
 
-	/// As the name suggests, this function sleeps for a given number of
-	/// milliseconds.
+	/// Sleep for the given number of milliseconds.
 	pub fn sleep_ms(&self, milliseconds: u32) {
 		// TODO: Since the timer resolution is 1024 Hz and not 1000 Hz, this
 		//       function is not completely precise. Please don't use it for

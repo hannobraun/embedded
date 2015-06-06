@@ -1,3 +1,5 @@
+use core::num::Wrapping;
+
 use hardware::base::rtt::RTT;
 
 
@@ -30,15 +32,9 @@ impl Timer {
 		// TODO: Since the timer resolution is 1024 Hz and not 1000 Hz, this
 		//       function is not completely precise. Please don't use it for
 		//       serious timekeeping.
-		// TODO: Even though it might look that way to the untrained eye, this
-		//       function doesn't take overflow into account. Rust's behavior in
-		//       debug mode is to panic, if an integer operation overflows.
-		//       While this code should work when compiled in release mode, it
-		//       would be much nicer and more reliable to explicitly use
-		//       wrapping integers.
 		// TODO: This function doesn't really sleep. Rather, it waits busily,
 		//       wasting a lot of resources.
-		let sleep_until = self.value() + milliseconds;
-		while self.value() < sleep_until {}
+		let sleep_until = Wrapping(self.value()) + Wrapping(milliseconds);
+		while self.value() < sleep_until.0 {}
 	}
 }

@@ -9,8 +9,10 @@ impl Timer {
 	/// interfaces to the same hardware will lead to confusion. In practice, the
 	/// configuration is hardcoded here, so multiple instances of Timer can
 	/// coexist peacefully without confusing each other.
-	pub fn new() {
+	pub fn new() -> Timer {
 		// Set the timer to a resolution of a millisecond
 		unsafe { (*RTT).mode = 0x00000020; }
+		Timer
+	}
 	}
 }

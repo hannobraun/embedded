@@ -15,6 +15,15 @@ impl Timer {
 		Timer
 	}
 
+	pub fn value(&self) -> u32 {
+		// TODO: This way of reading the timer value may not be accurate.
+		//       According to section 13.4 of the data sheet:
+		//       "As this value can be updated asynchronously from the Master
+		//       Clock, it is advisable to read this register twice at the same
+		//       value to improve accuracy of the returned value."
+		unsafe { (*RTT).value }
+	}
+
 	/// As the name suggests, this function sleeps for a given number of
 	/// milliseconds.
 	pub fn sleep_ms(&self, milliseconds: u32) {
@@ -29,14 +38,7 @@ impl Timer {
 		//       wrapping integers.
 		// TODO: This function doesn't really sleep. Rather, it waits busily,
 		//       wasting a lot of resources.
-		// TODO: This way of reading the timer value may not be accurate.
-		//       According to section 13.4 of the data sheet:
-		//       "As this value can be updated asynchronously from the Master
-		//       Clock, it is advisable to read this register twice at the same
-		//       value to improve accuracy of the returned value."
-		unsafe {
-			let sleep_until = (*RTT).value + milliseconds;
-			while (*RTT).value < sleep_until {}
-		}
+		let sleep_until = self.value() + milliseconds;
+		while self.value() < sleep_until {}
 	}
 }

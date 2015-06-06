@@ -27,6 +27,8 @@ impl Timer {
 		//       While this code should work when compiled in release mode, it
 		//       would be much nicer and more reliable to explicitly use
 		//       wrapping integers.
+		// TODO: This function doesn't really sleep. Rather, it waits busily,
+		//       wasting a lot of resources.
 		unsafe {
 			let sleep_until = (*RTT).value + milliseconds;
 			while (*RTT).value < sleep_until {}

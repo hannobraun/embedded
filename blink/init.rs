@@ -1,14 +1,10 @@
 // Initialization code and entry point for the program.
 
 
-#![feature(core, intrinsics, lang_items, no_std)]
+#![feature(intrinsics, lang_items, no_std)]
 
 #![no_main]
 #![no_std]
-
-
-#[macro_use]
-extern crate core;
 
 
 mod main;
@@ -28,9 +24,6 @@ pub mod hardware {
 }
 
 pub mod rust_base;
-
-
-use core::prelude::*;
 
 
 // This is the top of the stack, as provided to us by the linker.

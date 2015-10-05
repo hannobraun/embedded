@@ -41,6 +41,8 @@ impl Timer {
 		//       serious timekeeping.
 		// TODO: This function doesn't really sleep. Rather, it waits busily,
 		//       wasting a lot of resources.
+		// TODO: The behavior of this function is wrong, if the addition wraps.
+		//       Instead of sleeping, the function will return immediately.
 		let sleep_until = Wrapping(self.value()) + Wrapping(milliseconds);
 		while self.value() < sleep_until.0 {}
 	}

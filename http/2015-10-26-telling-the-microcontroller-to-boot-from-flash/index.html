@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>embedded.hannobraun.de</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+	</head>
+
+	<body>
+		<main>
+			<p class="date">2015-10-26</p>
+			<h1>Telling the Microcontroller to Boot from Flash</h1>
+
+			<p>
+				In the
+				<a href="/2015-10-08-talking-to-the-sam-ba-bootloader">previous
+				article</a>, we started experimenting with talking to the SAM-BA
+				bootloader directly. There already was a first success in
+				getting the bootloader to print its version, without the use of
+				any intermediary program.
+			</p>
+
+			<p>
+				After that, I thought, how hard can it be to write a Rust
+				program that uploads our program? I mean, we have documentation
+				on how to talk to the
+				bootloader<a class="footnote" href="#note-1">[1]</a> and the
+				<a href="https://github.com/shumatech/BOSSA">source code for
+				BOSSA</a>. Shouldn't that be enough? Well, as it turns out some
+				experimentation (and some plain old
+				banging-my-head-against-the-wall) was still required, but first
+				results are looking good.
+			</p>
+
+			<p>
+				Before I get into that though, let's address the "why" first.
+				Why would I write that program instead of using something
+				existing, like the
+				<a href="http://www.atmel.com/tools/ATMELSAM-BAIN-SYSTEMPROGRAMMER.aspx">official
+				SAM-BA In-system Programmer</a> by Atmel?
+				Well, for one, as I explained
+				<a href="/2015-10-08-talking-to-the-sam-ba-bootloader">last
+				time</a>, the previous solution, BOSSA, stopped working for me
+				for unknown reasons and Atmel's SAM-BA doesn't really fit into
+				my workflow.
+			</p>
+
+			<p>
+				Now, I don't suppose I could write a general replacement for
+				either of these in the amount of time I'm willing to spend on
+				that project, but it should certainly be possible to write a
+				partial replacement that does exactly what I need it to, and do
+				it better. And also, let's not forget the main goal of this
+				whole endeavor so far: To learn more about embedded programming,
+				and this allows us to see the microcontroller from a different
+				direction than usual.
+			</p>
+
+			<p>
+				But enough with the introduction, let's get into the
+				program<a class="footnote" href="#note-2">[2]</a>!
+			</p>
+
+			<pre>
+fn main() {
+	// Parsing of command-line arguments not shown here.
+
+	let     port   = init_port(&amp;device_path).unwrap();
+	let mut sam_ba = SamBa::new(port);
+	let     eefc_0 = Eefc::eefc_0();
+
+	// Here comes some more initialization and the command execution code. See
+	// below.
+}
+			</pre>
+
+			<p>
+				Here's the rough outline of the initialization code. First, we
+				initialize a serial port by calling <code>init_port</code>. The
+				<code>device_path</code> is passed in by the user as a
+				command-line argument<a class="footnote" href="#note-3">[3]</a>.
+				Then we create a <code>SamBa</code> instance, which is our
+				interface to the SAM-BA bootloader. We also create an instance
+				of <code>Eefc</code>, which we'll use to talk to the Enhanced
+				Embedded Flash Controller (EEFC) that's part of the
+				microcontroller<a class="footnote" href="#note-4">[4]</a>,
+				specifically to the one responsible for the first flash memory
+				bank, of which the SAM3X8E has
+				two<a class="footnote" href="#note-5">[5]</a>.
+			</p>
+
+			<p>
+				I'll get into some more details later, but let's continue with
+				the rough outline first.
+			</p>
+
+			<pre>
+fn main() {
+	// Argument parsing and the previously shown initialization code belong
+	// here.
+
+	sam_ba.set_normal_mode().unwrap();
+
+	// Command execution fits here. See below.
+}
+			</pre>
+
+			<p>
+				This, unsurprisingly, sets SAM-BA to normal mode, which means
+				it will send answers in binary. The alternative would be
+				terminal mode, which sends answers as text. Normal mode looked
+				like it was easier to work with, so I went with it.
+			</p>
+
+			<pre>
+fn main() {
+	// Initialization code not shown here. See above.
+
+	match command.as_ref() {
+		"version" =>
+			print!("{}", sam_ba.display_version().unwrap()),
+		"boot-mode" => {
+			let result =
+				eefc_0.execute_command::&lt;GetGpnvmBit, _&gt;(
+					&amp;mut sam_ba,
+					GpnvmNumber::BootModeSelection,
+				)
+				.unwrap();
+
+			print!("{:0>8x}\n", result)
+		},
+		"boot-from-flash" => {
+			eefc_0.execute_command::&lt;SetGpnvmBit, _&gt;(
+				&amp;mut sam_ba,
+				GpnvmNumber::BootModeSelection,
+			)
+			.unwrap();
+		},
+		_ =>
+			print!("Unknown command: {}\n", command),
+	}
+}
+			</pre>
+
+			<p>
+				Here we're executing a <code>command</code> that has been passed
+				by the user via the command-line. <code>version</code> tells
+				SAM-BA to return its version. <code>boot-mode</code> will print
+				the value that controls what memory the microcontroller boots
+				from, and "boot-from-flash" will tell it to boot from flash
+				memory next time it's powered up.
+			</p>
+
+			<p>
+				That's basically all it does. Easy, isn't it? From here on out,
+				I'll present all the important in detail, but I won't show off
+				every single line of code. Please
+				<a href="https://github.com/hannobraun/embedded/tree/f02b1485b8df6adc4adc8f86a4082544823d788e/uploader">check out the full code on GitHub</a>, if you're interested in
+				all the details.
+			</p>
+
+			<p>
+				Let's start with the initialization of the serial port.
+			</p>
+
+			<pre>
+fn init_port(path: &amp;str) -> serial::Result&lt;serial::SystemPort&gt; {
+	let mut port = serial::open(path).unwrap();
+
+	try!(port.reconfigure(&amp;|settings| {
+		try!(settings.set_baud_rate(serial::Baud115200));
+		settings.set_char_size(serial::Bits8);
+		settings.set_parity(serial::ParityNone);
+		settings.set_stop_bits(serial::Stop1);
+
+		Ok(())
+	}));
+
+	Ok(port)
+}
+			</pre>
+
+			<p>
+				This uses the excellent
+				<a href="https://crates.io/crates/serial">serial</a> library to
+				initialize the port in the correct
+				manner<a class="footnote" href="#note-6">[6]</a>. If you have
+				some basic knowledge about serial ports, this should be
+				self-explanatory. Explaining all about
+				<a href="https://en.wikipedia.org/wiki/Serial_port">serial
+				ports</a> is unfortunately out of the scope of this article.
+			</p>
+
+			<p>
+				Next up, our interface to the SAM-BA bootloader.
+			</p>
+
+			<pre>
+pub struct SamBa {
+	port: serial::SystemPort,
+}
+
+impl SamBa {
+	// Some less interesting code has been omitted.
+
+	pub fn read_word(&amp;mut self, address: u32) -&gt; Result&lt;u32&gt; {
+		try!(write!(self.port, "w{:0>8X},#", address));
+		let result = try!(self.port.read_u32::&lt;LittleEndian&gt;());
+
+		Ok(result)
+	}
+
+	pub fn write_word(&amp;mut self, address: u32, value: u32) -&gt; Result&lt;()&gt; {
+		try!(write!(self.port, "W{:0>8X},{:0>8X}#", address, value));
+		Ok(())
+	}
+}
+			</pre>
+
+			<p>
+				The most important function of SAM-BA is letting us to read from
+				and write to memory. It has several commands to do this, but for
+				now we just need to read and write whole words (which are 32
+				bits wide). Writing is pretty straight-forward, using the
+				<a href="https://doc.rust-lang.org/nightly/std/io/">I/O</a> and
+				<a href="https://doc.rust-lang.org/nightly/std/fmt/">formatting</a>
+				facilities from Rust's standard library. To read the answer,
+				we're using the (also quite excellent)
+				<a href="https://crates.io/crates/byteorder">byteorder</a>
+				crate.
+			</p>
+
+			<p>
+				Being able to directly access the memory on the microcontroller
+				has obvious applications (we're trying to upload a program,
+				after all), but think about it for a moment: As we've learned
+				previously, the ARM architecture uses memory-mapped I/O, meaning
+				that doing just about anything with the hardware takes the form
+				of reading from and writing to memory addresses. SAM-BA lets us
+				do this from a connected PC, which theoretically means we can
+				remotely control the microcontroller from a connected PC.
+			</p>
+
+			<p>
+				We'll do just that in a moment, to tell it to boot from flash
+				memory, but there might be interesting applications beyond that.
+			</p>
+
+			<p>
+				Let's continue with the interface to the EEFC.
+			</p>
+
+			<pre>
+pub struct Eefc {
+	command_register: u32,
+	status_register : u32,
+	result_register : u32,
+}
+
+impl Eefc {
+	pub fn eefc_0() -> Eefc {
+		let base = 0x400e0a00;
+
+		Eefc {
+			command_register: base + 0x04,
+			status_register : base + 0x08,
+			result_register : base + 0x0c,
+		}
+	}
+
+	// Some more code belongs here. We'll take a look at it below.
+}
+			</pre>
+
+			<p>
+				Here we set up the addresses for the EEFC controller. EEFC has
+				three registers that are relevant to us. We'll write commands to
+				the command register (called <code>EEFC_FCR</code>), read their
+				results from the result register (<code>EEFC_FRR</code>), and
+				read the general status from the status register
+				(<code>EEFC_FSR</code>).<a class="footnote" href="#note-7">[7]</a>
+			</p>
+
+			<p>
+				This is similar to
+				<a href="/2015-05-17-cleaning-up-parallel-io">the approach we've
+				been using previously to talk to hardware</a> from our program
+				running directly on the microcontroller. The difference is,
+				running directly on the device, we can use a pointer to a struct
+				to access the various. Here, we'll need to go through SAM-BA as
+				an intermediary, so we'll need to handle the addresses of the
+				registers directly.
+			</p>
+
+			<pre>
+impl Eefc {
+	// The code shown above belongs here.
+
+	pub fn execute_command&lt;C, A&gt;(&amp;self, sam_ba: &amp;mut SamBa, argument: A)
+		-> Result&lt;u32&gt;
+		where
+			C: Command&lt;Argument=A&gt;,
+			A: Argument,
+	{
+		let command =
+			0x5a &lt;&lt; 24
+			| (argument.value() as u32) &lt;&lt; 8
+			| C::value() as u32;
+
+		try!(sam_ba.write_word(self.command_register, command));
+
+		while try!(sam_ba.read_word(self.status_register)) &amp; 1 == 0 {}
+		assert_eq!(try!(sam_ba.read_word(self.status_register)), 1);
+
+		sam_ba.read_word(self.result_register)
+	}
+}
+			</pre>
+
+			<p>
+				As the name suggests, this is the method that executes the
+				commands the EEFC understands. Each command is executed in the
+				same way (as implemented here), but there are different commands
+				that take different kinds of arguments. This method uses some
+				type system magic to make itself
+				idiot-proof<a class="footnote" href="#note-8">[8]</a>, meaning
+				the user is prevented at compile time from passing an invalid
+				combination of command and
+				argument<a class="footnote" href="#note-9">[9]</a>.
+			</p>
+
+			<p>
+				Other than that, it's pretty straight-forward:
+			</p>
+			<ul>
+				<li>
+					The command is built from a magic value (<code>0x5a</code>)
+					that's the same for all commands, the 16-bit argument and
+					the 8-bit identifier of the command
+					itself<a class="footnote" href="#note-10">[10]</a>.
+				</li>
+				<li>
+					It is then written to the command register and we do a bit
+					of busy waiting until the status register is no longer 0
+					(meaning the device is no longer busy and the command has
+					finished
+					executing)<a class="footnote" href="#note-11">[11]</a>.
+				</li>
+				<li>
+					After that, we assert that the status register shows
+					everything is okay (it might not be, for example if we've
+					sent an invalid command).
+				</li>
+				<li>
+					Finally, we read the result from the result register and
+					return it<a class="footnote" href="#note-12">[12]</a>.
+				</li>
+			</ul>
+
+			<p>
+				I promise, we're almost done. One of the last things we need to
+				know about are the <code>Command</code> and
+				<code>Argument</code> traits.
+			</p>
+
+			<pre>
+trait Command {
+	type Argument: Argument;
+
+	fn value() -> u8;
+}
+
+trait Argument {
+	fn value(self) -> u16;
+}
+			</pre>
+
+			<p>
+				Not much to see here. A command has an associated argument type
+				and a value that identifies it. An argument can be encoded as a
+				16-bit value.
+			</p>
+
+			<p>
+				And the last bit before we actually get to use the program: The
+				implementation of the actual commands.
+			</p>
+
+			<pre>
+pub struct SetGpnvmBit;
+
+impl Command for SetGpnvmBit {
+	type Argument = GpnvmNumber;
+
+	fn value() -> u8 { 0x0b }
+}
+
+
+pub struct GetGpnvmBit;
+
+impl Command for GetGpnvmBit {
+	type Argument = GpnvmNumber;
+
+	fn value() -> u8 { 0x0d }
+}
+
+
+pub enum GpnvmNumber {
+	// Security          = 0,
+	BootModeSelection = 1,
+	// FlashSelection    = 2,
+}
+
+impl Argument for GpnvmNumber {
+	fn value(self) -> u16 { self as u16 }
+}
+			</pre>
+
+			<p>
+				For now we just need two commands: One for setting a GPNVM bit
+				and one for reading its value. There are three GPNVM bits, but
+				we need only one right now: The one that controls what memory
+				the microcontroller boots from. That can be either ROM (where
+				the bootloader lives) or Flash (where our program
+				lives).<a class="footnote" href="#note-13">[13]</a>
+			</p>
+
+			<p>
+				As a reminder, here's how we use this infrastructure to set the
+				boot mode selection bit, i.e. tell the microcontroller to boot
+				from flash on the next reset:
+			</p>
+
+			<pre>
+eefc_0.execute_command::&lt;SetGpnvmBit, _&gt;(
+	&amp;mut sam_ba,
+	GpnvmNumber::BootModeSelection,
+)
+			</pre>
+
+			<p>
+				So, on the home stretch. Let's use the program make the
+				microcontroller boot from flash! If we connect the board to a
+				PC via USB on the native port (that's the one closer to the
+				<code>RESET</code> button) and erase the flash memory by
+				pressing the <code>ERASE</code> button for a moment, that should
+				not only clear the flash memory, but also start the bootloader.
+				We can confirm this (on Linux) by running <code>lsusb</code>.
+				There should be an entry for the board that looks somewhat like
+				this:
+			</p>
+
+			<pre>
+Bus 003 Device 004: ID 03eb:6124 Atmel Corp. at91sam SAMBA bootloader
+			</pre>
+
+			<p>
+				Now we can switch to the
+				<a href="https://github.com/hannobraun/embedded/tree/f02b1485b8df6adc4adc8f86a4082544823d788e/uploader">uploader
+				directory</a> and build and run it like this, to get the current
+				value of the boot mode selection
+				bit<a class="footnote" href="#note-14">[14]</a>:
+			</p>
+
+			<pre>
+$ cargo run -- /dev/ttyACM0 boot-mode
+			</pre>
+
+			<p>
+				The device path might be different on your machine (like
+				/dev/ttyACM0, /dev/ttyACM1 or similar). If you have multiple
+				device files, just try all of them until one works without
+				error.
+			</p>
+
+			<p>
+				If everything worked, the output should look like this:
+				<code>00000000</code>
+			</p>
+
+			<p>
+				This means the boot mode selection bit is 0, and the device
+				boots from ROM. Only makes sense, because if it didn't, how
+				would we talk to the bootloader?
+			</p>
+
+			<p>
+				Next, let's tell it to boot from flash memory:
+			</p>
+
+			<pre>
+$ cargo run -- /dev/ttyACM0 boot-from-flash
+			</pre>
+
+			<p>
+				Now, we can ask for the boot selection bit again:
+			</p>
+
+			<pre>
+$ cargo run -- /dev/ttyACM0 boot-mode
+			</pre>
+
+			<p>
+				The result should look like this: <code>00000002</code>. This
+				shows all the GPNVM bits, and the boot mode selection bit is the
+				second least significant one, which means the value 2 makes
+				total sense.
+			</p>
+
+			<p>
+				Now for the final step: Press the <code>RESET</code> button for
+				a moment and run <code>lsusb</code> again. The entry we
+				previously saw should no longer be there. Why? Well, we told the
+				microcontroller to boot from flash memory, but didn't upload a
+				program. This means no program is currently running on the
+				device, so there is nothing that controls the USB port.
+			</p>
+
+			<p>
+				You can start over by pressing <code>ERASE</code>, to get back
+				to the bootloader.
+			</p>
+			
+			<p>
+				Phew, that was quite a bit of ground that we covered today! As
+				always, the full code is available
+				<a href="https://github.com/hannobraun/embedded">on GitHub</a>.
+				Tune in next time, when we will hopefully build on today's
+				foundation and actually upload a program.
+			</p>
+
+			<hr />
+
+			<footer>
+				<a name="note-1"></a>
+				<span class="footnote-number">[1]</span>
+				<p>
+					The SAM-BA commands are documented in the
+					<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a>, chapter 20.4.
+				</p>
+
+				<a name="note-2"></a>
+				<span class="footnote-number">[2]</span>
+				<p>
+					Please be advised that I wrote and tested all of this on
+					Linux. It <em>might</em> work on other platforms too. Please
+					let me know about your experiences, should you try it out!
+				</p>
+
+				<a name="note-3"></a>
+				<span class="footnote-number">[3]</span>
+				<p>
+					The device path is something like <code>/dev/ttyACM0</code>,
+					as explained in the
+					<a href="/2015-10-08-talking-to-the-sam-ba-bootloader">previous
+					article</a>.
+				</p>
+
+				<a name="note-4"></a>
+				<span class="footnote-number">[4]</span>
+				<p>
+					Documented in the
+					<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a>, chapter 18.
+				</p>
+
+				<a name="note-5"></a>
+				<span class="footnote-number">[5]</span>
+				<p>
+					Chapter 7.2.3 in the
+					<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a> has information about the flash memory on the
+					device.
+				</p>
+
+				<a name="note-6"></a>
+				<span class="footnote-number">[6]</span>
+				<p>
+					The
+					<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a>, chapter 20.4.1 has the correct serial settings.
+				</p>
+
+				<a name="note-7"></a>
+				<span class="footnote-number">[7]</span>
+				<p>
+					Chapter 18.5 in the
+					<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a> describes the EEFC user interface.
+				</p>
+
+				<a name="note-8"></a>
+				<span class="footnote-number">[8]</span>
+				<p>
+					Don't think that I'm doing this idiot-proofing for you, dear
+					reader. I'm enough of an idiot myself to warrant this kind
+					of approach.
+				</p>
+
+				<a name="note-9"></a>
+				<span class="footnote-number">[9]</span>
+				<p>
+					This kind of stuff should be second nature to any advanced
+					Rust user, but to the beginners out there that stuff
+					probably looks like magic. Unfortunately I wasn't able to
+					find a good explanation for this technique on short notice,
+					so here's the rundown:
+				</p>
+				<ul>
+					<li>
+						The method accepts two type arguments, <code>C</code>
+						for command and <code>A</code> for the argument. That's
+						called
+						<a href="https://doc.rust-lang.org/nightly/book/generics.html">Generics</a>.
+					</li>
+					<li>
+						There's an actual (non-type) argument of type
+						<code>A</code>, to pass the argument. There's no
+						argument of type <code>C</code> for the command, because
+						we don't need it. The compiler needs to know which
+						command we're calling the method for, but there's no
+						value associated with this command at run-time.
+					</li>
+					<li>
+						But you can't just pass use any type for <code>C</code>
+						and <code>A</code>. They have
+						<a href="https://doc.rust-lang.org/nightly/book/traits.html">trait
+						bounds</a>.
+					</li>
+					<li>
+						<code>A</code> is straight-forward. Whatever type you
+						pass for <code>A</code> just needs to implement the
+						<code>Argument</code> trait.
+					</li>
+					<li>
+						<code>C</code> needs to implement the trait
+						<code>Command</code>. But not only that.
+						<code>Command</code> has an associated type for the
+						kind of argument it takes.
+					</li>
+					<li>
+						That <code>Argument=A</code> bit makes sure that you
+						can't just pass any argument with any command. Once
+						you've decided on a command, you can only pass the
+						argument type that the command type says it accepts.
+					</li>
+				</ul>
+				<p>
+					I know that this probably isn't a good introduction to this
+					topic, but hopefully it will point you in the right
+					direction. Feel free to
+					<a href="mailto:mail@hannobraun.de">get in touch</a>, if you
+					have any questions or comments.
+				</p>
+
+				<a name="note-10"></a>
+				<span class="footnote-number">[10]</span>
+				<p>
+					In the
+					<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a>, chapter 18.4.3 lists the commands and chapter
+					18.5.2 explains the command register and command arguments.
+				</p>
+
+				<a name="note-11"></a>
+				<span class="footnote-number">[11]</span>
+				<p>
+					Chapter 18.5.3 of the
+					<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a> explains the status register.
+				</p>
+
+				<a name="note-12"></a>
+				<span class="footnote-number">[12]</span>
+				<p>
+					See chapter 18.5.4 in the
+					<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a> for everything you need to know about the result
+					register (which is not that much).
+				</p>
+
+				<a name="note-13"></a>
+				<span class="footnote-number">[13]</span>
+				<p>
+					Chapter 7.2.3.10 in the
+					<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
+					sheet</a> has information about the GPNVM bits.
+				</p>
+
+				<a name="note-14"></a>
+				<span class="footnote-number">[14]</span>
+				<p>
+					This assumes you have a working
+					<a href="https://www.rust-lang.org/">Rust</a> installation,
+					including Cargo. I've developed this on a recent nightly,
+					but the latest stable version should work fine, too.
+				</p>
+			</footer>
+
+			<hr />
+		</main>
+
+		<footer>
+			<p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+		</footer>
+	</body>
+</html>

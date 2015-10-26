@@ -1,0 +1,8 @@
+[package]
+name    = "upload"
+version = "0.1.0"
+authors = ["Hanno Braun <mail@hannobraun.de>"]
+
+[dependencies]
+byteorder = "*"
+serial    = "*"

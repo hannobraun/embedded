@@ -14,51 +14,50 @@
 			<p>
 				In the
 				<a href="/2015-10-08-talking-to-the-sam-ba-bootloader">previous
-				article</a>, we started experimenting with talking to the SAM-BA
+				article</a>, we experimented with talking to the SAM-BA
 				bootloader directly. There already was a first success in
 				getting the bootloader to print its version, without the use of
 				any intermediary program.
 			</p>
 
 			<p>
-				After that, I thought, how hard can it be to write a Rust
-				program that uploads our program? I mean, we have documentation
-				on how to talk to the
+				That gave me the idea to write an uploader in Rust to upload the
+				program to the microcontroller. After all, how hard could it be?
+				We have documentation on how to talk to the
 				bootloader<a class="footnote" href="#note-1">[1]</a> and the
 				<a href="https://github.com/shumatech/BOSSA">source code for
-				BOSSA</a>. Shouldn't that be enough? Well, as it turns out some
+				BOSSA</a>. Shouldn't that be enough? Well, as it turns out, some
 				experimentation (and some plain old
-				banging-my-head-against-the-wall) was still required, but first
-				results are looking good.
+				banging-my-head-against-the-wall) was still required. But the
+				results so far are looking good!
 			</p>
 
 			<p>
 				Before I get into that though, let's address the "why" first.
-				Why would I write that program instead of using something
+				Why would I write an uploader myself instead of using something
 				existing, like the
 				<a href="http://www.atmel.com/tools/ATMELSAM-BAIN-SYSTEMPROGRAMMER.aspx">official
 				SAM-BA In-system Programmer</a> by Atmel?
-				Well, for one, as I explained
+				Well, as I explained
 				<a href="/2015-10-08-talking-to-the-sam-ba-bootloader">last
 				time</a>, the previous solution, BOSSA, stopped working for me
-				for unknown reasons and Atmel's SAM-BA doesn't really fit into
-				my workflow.
+				for unknown reasons and Atmel's SAM-BA doesn't really fit my
+				workflow.
 			</p>
 
 			<p>
-				Now, I don't suppose I could write a general replacement for
-				either of these in the amount of time I'm willing to spend on
-				that project, but it should certainly be possible to write a
-				partial replacement that does exactly what I need it to, and do
-				it better. And also, let's not forget the main goal of this
-				whole endeavor so far: To learn more about embedded programming,
-				and this allows us to see the microcontroller from a different
-				direction than usual.
+				While I don't suppose I could write a generally better
+				replacement for either of those, I can certainly come up with
+				something that works better for my specific use case. And let's
+				not forget about the main goal of this endeavor so far: To learn
+				more about embedded programming. Writing this uploader allows us
+				to see the microcontroller from a different perspective than
+				usual.
 			</p>
 
 			<p>
-				But enough with the introduction, let's get into the
-				program<a class="footnote" href="#note-2">[2]</a>!
+				But enough with the introduction, let's get into the uploader's
+				source code<a class="footnote" href="#note-2">[2]</a>!
 			</p>
 
 			<pre>
@@ -75,7 +74,7 @@ fn main() {
 			</pre>
 
 			<p>
-				Here's the rough outline of the initialization code. First, we
+				That's the rough outline of the initialization code. First, we
 				initialize a serial port by calling <code>init_port</code>. The
 				<code>device_path</code> is passed in by the user as a
 				command-line argument<a class="footnote" href="#note-3">[3]</a>.
@@ -84,7 +83,7 @@ fn main() {
 				of <code>Eefc</code>, which we'll use to talk to the Enhanced
 				Embedded Flash Controller (EEFC) that's part of the
 				microcontroller<a class="footnote" href="#note-4">[4]</a>,
-				specifically to the one responsible for the first flash memory
+				specifically to the one that controls the first flash memory
 				bank, of which the SAM3X8E has
 				two<a class="footnote" href="#note-5">[5]</a>.
 			</p>
@@ -108,7 +107,7 @@ fn main() {
 			<p>
 				This, unsurprisingly, sets SAM-BA to normal mode, which means
 				it will send answers in binary. The alternative would be
-				terminal mode, which sends answers as text. Normal mode looked
+				terminal mode, which sends answers as text. Normal mode seemed
 				like it was easier to work with, so I went with it.
 			</p>
 
@@ -147,14 +146,14 @@ fn main() {
 				by the user via the command-line. <code>version</code> tells
 				SAM-BA to return its version. <code>boot-mode</code> will print
 				the value that controls what memory the microcontroller boots
-				from, and "boot-from-flash" will tell it to boot from flash
-				memory next time it's powered up.
+				from, and <code>boot-from-flash</code> will tell it to boot from
+				flash memory next time it's powered up.
 			</p>
 
 			<p>
-				That's basically all it does. Easy, isn't it? From here on out,
-				I'll present all the important in detail, but I won't show off
-				every single line of code. Please
+				That's basically all it does for now. Easy, isn't it? From here
+				on out, we'll taker a closer look at the important steps, but I
+				won't show off every single line of code. Please
 				<a href="https://github.com/hannobraun/embedded/tree/f02b1485b8df6adc4adc8f86a4082544823d788e/uploader">check out the full code on GitHub</a>, if you're interested in
 				all the details.
 			</p>
@@ -238,12 +237,13 @@ impl SamBa {
 				that doing just about anything with the hardware takes the form
 				of reading from and writing to memory addresses. SAM-BA lets us
 				do this from a connected PC, which theoretically means we can
-				remotely control the microcontroller from a connected PC.
+				remotely control the microcontroller remotely.
 			</p>
 
 			<p>
 				We'll do just that in a moment, to tell it to boot from flash
-				memory, but there might be interesting applications beyond that.
+				memory, but I'm sure there are interesting applications beyond
+				that.
 			</p>
 
 			<p>
@@ -284,12 +284,11 @@ impl Eefc {
 			<p>
 				This is similar to
 				<a href="/2015-05-17-cleaning-up-parallel-io">the approach we've
-				been using previously to talk to hardware</a> from our program
-				running directly on the microcontroller. The difference is,
-				running directly on the device, we can use a pointer to a struct
-				to access the various. Here, we'll need to go through SAM-BA as
-				an intermediary, so we'll need to handle the addresses of the
-				registers directly.
+				been using previously to talk to hardware</a> in our blink
+				program. The difference is, running directly on the device, we
+				can use a pointer to a struct to access the various. Here, we'll
+				need to go through SAM-BA as an intermediary, so we'll need to
+				handle the addresses of the registers directly.
 			</p>
 
 			<pre>
@@ -377,8 +376,8 @@ trait Argument {
 
 			<p>
 				Not much to see here. A command has an associated argument type
-				and a value that identifies it. An argument can be encoded as a
-				16-bit value.
+				and an 8-bit value that identifies it. An argument can be
+				encoded as a 16-bit value.
 			</p>
 
 			<p>
@@ -439,7 +438,7 @@ eefc_0.execute_command::&lt;SetGpnvmBit, _&gt;(
 			</pre>
 
 			<p>
-				So, on the home stretch. Let's use the program make the
+				So, on to the home stretch. Let's use the program to make the
 				microcontroller boot from flash! If we connect the board to a
 				PC via USB on the native port (that's the one closer to the
 				<code>RESET</code> button) and erase the flash memory by
@@ -468,7 +467,7 @@ $ cargo run -- /dev/ttyACM0 boot-mode
 
 			<p>
 				The device path might be different on your machine (like
-				/dev/ttyACM0, /dev/ttyACM1 or similar). If you have multiple
+				/dev/ttyACM1, /dev/ttyACM2 or similar). If you have multiple
 				device files, just try all of them until one works without
 				error.
 			</p>
@@ -480,8 +479,9 @@ $ cargo run -- /dev/ttyACM0 boot-mode
 
 			<p>
 				This means the boot mode selection bit is 0, and the device
-				boots from ROM. Only makes sense, because if it didn't, how
-				would we talk to the bootloader?
+				boots from ROM. Only makes sense, because if it hadn't booted
+				from ROM, the bootloader wouldn't be running and we wouldn't be
+				talking to it.
 			</p>
 
 			<p>
@@ -503,8 +503,8 @@ $ cargo run -- /dev/ttyACM0 boot-mode
 			<p>
 				The result should look like this: <code>00000002</code>. This
 				shows all the GPNVM bits, and the boot mode selection bit is the
-				second least significant one, which means the value 2 makes
-				total sense.
+				second least significant one. A value of 2 means the boot mode
+				selection bit is set.
 			</p>
 
 			<p>
@@ -545,14 +545,14 @@ $ cargo run -- /dev/ttyACM0 boot-mode
 				<p>
 					Please be advised that I wrote and tested all of this on
 					Linux. It <em>might</em> work on other platforms too. Please
-					let me know about your experiences, should you try it out!
+					let me know about your experiences, should you try it!
 				</p>
 
 				<a name="note-3"></a>
 				<span class="footnote-number">[3]</span>
 				<p>
-					The device path is something like <code>/dev/ttyACM0</code>,
-					as explained in the
+					The device path should be something like
+					<code>/dev/ttyACM0</code>, as explained in the
 					<a href="/2015-10-08-talking-to-the-sam-ba-bootloader">previous
 					article</a>.
 				</p>
@@ -587,13 +587,13 @@ $ cargo run -- /dev/ttyACM0 boot-mode
 				<p>
 					Chapter 18.5 in the
 					<a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data
-					sheet</a> describes the EEFC user interface.
+					sheet</a> describes the EEFC's user interface.
 				</p>
 
 				<a name="note-8"></a>
 				<span class="footnote-number">[8]</span>
 				<p>
-					Don't think that I'm doing this idiot-proofing for you, dear
+					Don't assume that I'm doing this idiot-proofing for you, dear
 					reader. I'm enough of an idiot myself to warrant this kind
 					of approach.
 				</p>
@@ -602,16 +602,16 @@ $ cargo run -- /dev/ttyACM0 boot-mode
 				<span class="footnote-number">[9]</span>
 				<p>
 					This kind of stuff should be second nature to any advanced
-					Rust user, but to the beginners out there that stuff
-					probably looks like magic. Unfortunately I wasn't able to
-					find a good explanation for this technique on short notice,
-					so here's the rundown:
+					Rust programmer, but to the beginners out there that stuff
+					probably looks like black magic. Unfortunately I wasn't able
+					to find a good explanation of this technique, so here's my
+					lousy attempt:
 				</p>
 				<ul>
 					<li>
 						The method accepts two type arguments, <code>C</code>
-						for command and <code>A</code> for the argument. That's
-						called
+						for the command and <code>A</code> for the argument.
+						See
 						<a href="https://doc.rust-lang.org/nightly/book/generics.html">Generics</a>.
 					</li>
 					<li>
@@ -620,11 +620,11 @@ $ cargo run -- /dev/ttyACM0 boot-mode
 						argument of type <code>C</code> for the command, because
 						we don't need it. The compiler needs to know which
 						command we're calling the method for, but there's no
-						value associated with this command at run-time.
+						value associated with commands at run-time.
 					</li>
 					<li>
-						But you can't just pass use any type for <code>C</code>
-						and <code>A</code>. They have
+						But you can't just pass any type for <code>C</code> and
+						<code>A</code>. They have
 						<a href="https://doc.rust-lang.org/nightly/book/traits.html">trait
 						bounds</a>.
 					</li>

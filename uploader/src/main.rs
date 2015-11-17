@@ -26,7 +26,6 @@ use eefc::{
 	GpnvmNumber,
 	SetGpnvmBit,
 };
-use result::Result;
 use sam_ba::SamBa;
 
 

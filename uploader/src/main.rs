@@ -41,7 +41,7 @@ fn main() {
 	let mut sam_ba = SamBa::new(port);
 	let     eefc_0 = Eefc::eefc_0();
 
-	sam_ba.set_normal_mode().unwrap();
+	sam_ba.set_normal_mode().expect("Failed to set normal mode");
 
 	match command.as_ref() {
 		"version" =>

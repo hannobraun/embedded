@@ -35,7 +35,9 @@ fn main() {
 	let device_path = args.next().expect("Expected device path argument");
 	let command     = args.next().expect("Expected command argument");
 
-	let     port   = serial_port::init(&device_path).unwrap();
+	let port = serial_port::init(&device_path)
+		.expect("Failed to initialize serial port");
+
 	let mut sam_ba = SamBa::new(port);
 	let     eefc_0 = Eefc::eefc_0();
 

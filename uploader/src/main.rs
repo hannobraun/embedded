@@ -68,6 +68,16 @@ fn main() {
 			)
 			.expect("Failed to set GPNVM bit");
 		},
+		"read-word" => {
+			let address = args.next().expect("Expected address argument");
+			let address = address
+				.parse()
+				.expect("Failed to parse address argument");
+
+			let value = sam_ba.read_word(address).expect("Failed to read word");
+
+			print!("{}\n", value);
+		},
 		_ =>
 			print!("Unknown command: {}\n", command),
 	}

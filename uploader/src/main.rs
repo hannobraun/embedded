@@ -44,8 +44,10 @@ fn main() {
 	sam_ba.set_normal_mode().expect("Failed to set normal mode");
 
 	match command.as_ref() {
-		"version" =>
-			print!("{}", sam_ba.display_version().unwrap()),
+		"version" => {
+			let version = sam_ba.display_version().unwrap();
+			print!("{}", version)
+		},
 		"boot-mode" => {
 			let result =
 				eefc_0.execute_command::<GetGpnvmBit, _>(

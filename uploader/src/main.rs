@@ -9,6 +9,7 @@
 mod eefc;
 mod result;
 mod sam_ba;
+mod serial_port;
 mod utils;
 
 
@@ -17,8 +18,6 @@ extern crate serial;
 
 
 use std::env;
-
-use serial::prelude::*;
 
 use eefc::{
 	Eefc,
@@ -36,7 +35,7 @@ fn main() {
 	let device_path = args.next().unwrap();
 	let command     = args.next().unwrap();
 
-	let     port   = init_port(&device_path).unwrap();
+	let     port   = serial_port::init_port(&device_path).unwrap();
 	let mut sam_ba = SamBa::new(port);
 	let     eefc_0 = Eefc::eefc_0();
 
@@ -65,19 +64,4 @@ fn main() {
 		_ =>
 			print!("Unknown command: {}\n", command),
 	}
-}
-
-fn init_port(path: &str) -> serial::Result<serial::SystemPort> {
-	let mut port = serial::open(path).unwrap();
-
-	try!(port.reconfigure(&|settings| {
-		try!(settings.set_baud_rate(serial::Baud115200));
-		settings.set_char_size(serial::Bits8);
-		settings.set_parity(serial::ParityNone);
-		settings.set_stop_bits(serial::Stop1);
-
-		Ok(())
-	}));
-
-	Ok(port)
 }

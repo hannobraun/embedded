@@ -45,7 +45,10 @@ fn main() {
 
 	match command.as_ref() {
 		"version" => {
-			let version = sam_ba.display_version().unwrap();
+			let version = sam_ba
+				.display_version()
+				.expect("Failed to retrieve version");
+
 			print!("{}", version)
 		},
 		"boot-mode" => {

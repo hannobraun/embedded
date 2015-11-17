@@ -78,6 +78,19 @@ fn main() {
 
 			print!("{}\n", value);
 		},
+		"write-word" => {
+			let address = args.next().expect("Expected address argument");
+			let value   = args.next().expect("Expected value argument");
+
+			let address = address
+				.parse()
+				.expect("Failed to parse address argument");
+			let value = value
+				.parse()
+				.expect("Failed to parse value argument");
+
+			sam_ba.write_word(address, value).expect("Failed to write word");
+		},
 		_ =>
 			print!("Unknown command: {}\n", command),
 	}

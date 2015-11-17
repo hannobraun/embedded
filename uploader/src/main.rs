@@ -66,7 +66,7 @@ fn main() {
 				&mut sam_ba,
 				GpnvmNumber::BootModeSelection,
 			)
-			.unwrap();
+			.expect("Failed to set GPNVM bit");
 		},
 		_ =>
 			print!("Unknown command: {}\n", command),

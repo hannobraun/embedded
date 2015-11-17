@@ -2,7 +2,7 @@ use serial;
 use serial::prelude::*;
 
 
-pub fn init_port(path: &str) -> serial::Result<serial::SystemPort> {
+pub fn init(path: &str) -> serial::Result<serial::SystemPort> {
 	let mut port = serial::open(path).unwrap();
 
 	try!(port.reconfigure(&|settings| {

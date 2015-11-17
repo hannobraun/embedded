@@ -35,7 +35,7 @@ fn main() {
 	let device_path = args.next().unwrap();
 	let command     = args.next().unwrap();
 
-	let     port   = serial_port::init_port(&device_path).unwrap();
+	let     port   = serial_port::init(&device_path).unwrap();
 	let mut sam_ba = SamBa::new(port);
 	let     eefc_0 = Eefc::eefc_0();
 

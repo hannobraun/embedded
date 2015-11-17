@@ -30,7 +30,7 @@ use sam_ba::SamBa;
 
 fn main() {
 	let mut args = env::args();
-	args.next().unwrap();
+	args.next().expect("Expected program name as first entry in args");
 
 	let device_path = args.next().expect("Expected device path argument");
 	let command     = args.next().expect("Expected command argument");

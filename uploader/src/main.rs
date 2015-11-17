@@ -32,8 +32,8 @@ fn main() {
 	let mut args = env::args();
 	args.next().unwrap();
 
-	let device_path = args.next().unwrap();
-	let command     = args.next().unwrap();
+	let device_path = args.next().expect("Expected device path argument");
+	let command     = args.next().expect("Expected command argument");
 
 	let     port   = serial_port::init(&device_path).unwrap();
 	let mut sam_ba = SamBa::new(port);

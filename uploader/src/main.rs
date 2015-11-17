@@ -57,7 +57,7 @@ fn main() {
 					&mut sam_ba,
 					GpnvmNumber::BootModeSelection,
 				)
-				.unwrap();
+				.expect("Failed to get GPNVM bit");
 
 			print!("{:0>8x}\n", result)
 		},

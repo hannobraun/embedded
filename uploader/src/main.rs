@@ -45,8 +45,7 @@ fn main() {
 
 	match command.as_ref() {
 		"version" => {
-			let version = sam_ba
-				.display_version()
+			let version = sam_ba.display_version()
 				.expect("Failed to retrieve version");
 
 			print!("{}", version)

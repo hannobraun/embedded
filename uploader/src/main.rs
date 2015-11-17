@@ -75,7 +75,7 @@ fn main() {
 
 			let value = sam_ba.read_word(address).expect("Failed to read word");
 
-			print!("{}\n", value);
+			print!("{:0>8x}\n", value);
 		},
 		"write-word" => {
 			let address = args.next().expect("Expected address argument");

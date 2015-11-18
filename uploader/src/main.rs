@@ -69,8 +69,8 @@ fn main() {
 		},
 		"read-word" => {
 			let address = args.next().expect("Expected address argument");
-			let address = address.parse()
-				.expect("Failed to parse address argument");
+			let address = u32::from_str_radix(&address, 16)
+				.expect("Expected address to be a hexadecimal number");
 
 			let value = sam_ba.read_word(address).expect("Failed to read word");
 
@@ -80,10 +80,10 @@ fn main() {
 			let address = args.next().expect("Expected address argument");
 			let value   = args.next().expect("Expected value argument");
 
-			let address = address.parse()
-				.expect("Failed to parse address argument");
-			let value = value.parse()
-				.expect("Failed to parse value argument");
+			let address = u32::from_str_radix(&address, 16)
+				.expect("Expected address to be a hexadecimal number");
+			let value = u32::from_str_radix(&value, 16)
+				.expect("Expected value to be a hexadecimal number");
 
 			sam_ba.write_word(address, value).expect("Failed to write word");
 		},

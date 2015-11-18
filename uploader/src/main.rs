@@ -18,6 +18,8 @@ extern crate serial;
 
 
 use std::env;
+use std::fs::File;
+use std::io::prelude::*;
 use std::num::ParseIntError;
 
 use eefc::{
@@ -96,6 +98,20 @@ fn main() {
 			let value   = parse_u8_hex(args.next(), "value");
 
 			sam_ba.write_byte(address, value).expect("Failed to write byte");
+		},
+
+		"read-file" => {
+			let address = parse_u32_hex(args.next(), "address");
+			let length  = parse_u32_hex(args.next(), "length" );
+			let path    = args.next().expect("Expected file path argument");
+
+			let mut file = File::create(&path).expect("Failed to create file");
+
+			for i in 0 .. length {
+				let byte = sam_ba.read_byte(address + i)
+					.expect("Failed to read byte");
+				file.write(&[byte]).expect("Failed to write to file");
+			}
 		},
 
 		_ =>

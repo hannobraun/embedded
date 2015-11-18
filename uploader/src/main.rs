@@ -50,6 +50,7 @@ fn main() {
 
 			print!("{}", version)
 		},
+
 		"boot-mode" => {
 			let result =
 				eefc_0.execute_command::<GetGpnvmBit, _>(
@@ -67,6 +68,7 @@ fn main() {
 			)
 			.expect("Failed to set GPNVM bit");
 		},
+
 		"read-word" => {
 			let address = args.next().expect("Expected address argument");
 			let address = u32::from_str_radix(&address, 16)
@@ -87,6 +89,7 @@ fn main() {
 
 			sam_ba.write_word(address, value).expect("Failed to write word");
 		},
+
 		_ =>
 			print!("Unknown command: {}\n", command),
 	}

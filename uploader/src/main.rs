@@ -70,41 +70,30 @@ fn main() {
 		},
 
 		"read-word" => {
-			let address = args.next().expect("Expected address argument");
-			let address = u32::from_str_radix(&address, 16)
-				.expect("Expected address to be a hexadecimal number");
+			let address = parse_u32_hex(args.next(), "address");
 
 			let value = sam_ba.read_word(address).expect("Failed to read word");
 
 			print!("{:0>8x}\n", value);
 		},
 		"write-word" => {
-			let address = args.next().expect("Expected address argument");
-			let value   = args.next().expect("Expected value argument");
-
-			let address = u32::from_str_radix(&address, 16)
-				.expect("Expected address to be a hexadecimal number");
-			let value = u32::from_str_radix(&value, 16)
-				.expect("Expected value to be a hexadecimal number");
+			let address = parse_u32_hex(args.next(), "address");
+			let value   = parse_u32_hex(args.next(), "value");
 
 			sam_ba.write_word(address, value).expect("Failed to write word");
 		},
 
 		"read-byte" => {
-			let address = args.next().expect("Expected address argument");
-			let address = u32::from_str_radix(&address, 16)
-				.expect("Expected address to be a hexadecimal number");
+			let address = parse_u32_hex(args.next(), "address");
 
 			let value = sam_ba.read_byte(address).expect("Failed to read byte");
 
 			print!("{:0>2x}\n", value);
 		},
 		"write-byte" => {
-			let address = args.next().expect("Expected address argument");
+			let address = parse_u32_hex(args.next(), "address");
 			let value   = args.next().expect("Expected value argument");
 
-			let address = u32::from_str_radix(&address, 16)
-				.expect("Expected address to be a hexadecimal number");
 			let value = u8::from_str_radix(&value, 16)
 				.expect("Expected value to be a hexadecimal number");
 
@@ -114,4 +103,11 @@ fn main() {
 		_ =>
 			print!("Unknown command: {}\n", command),
 	}
+}
+
+
+fn parse_u32_hex(arg: Option<String>, name: &str) -> u32 {
+	let arg = arg.expect(&format!("Expected {} argument", name));
+	u32::from_str_radix(&arg, 16)
+		.expect(&format!("Expected {} to be a hexadecimal number", name))
 }

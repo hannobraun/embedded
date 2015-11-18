@@ -18,6 +18,7 @@ extern crate serial;
 
 
 use std::env;
+use std::num::ParseIntError;
 
 use eefc::{
 	Eefc,
@@ -104,13 +105,19 @@ fn main() {
 
 
 fn parse_u8_hex(arg: Option<String>, name: &str) -> u8 {
-	let arg = arg.expect(&format!("Expected {} argument", name));
-	u8::from_str_radix(&arg, 16)
-		.expect(&format!("Expected {} to be a hexadecimal number", name))
+	parse_hex(arg, name, u8::from_str_radix)
 }
 
 fn parse_u32_hex(arg: Option<String>, name: &str) -> u32 {
+	parse_hex(arg, name, u32::from_str_radix)
+}
+
+fn parse_hex<T>(
+	arg  : Option<String>,
+	name : &str,
+	parse: fn(&str, u32) -> Result<T, ParseIntError>,
+) -> T {
 	let arg = arg.expect(&format!("Expected {} argument", name));
-	u32::from_str_radix(&arg, 16)
+	parse(&arg, 16)
 		.expect(&format!("Expected {} to be a hexadecimal number", name))
 }

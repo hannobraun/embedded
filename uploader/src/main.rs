@@ -92,10 +92,7 @@ fn main() {
 		},
 		"write-byte" => {
 			let address = parse_u32_hex(args.next(), "address");
-			let value   = args.next().expect("Expected value argument");
-
-			let value = u8::from_str_radix(&value, 16)
-				.expect("Expected value to be a hexadecimal number");
+			let value   = parse_u8_hex(args.next(), "value");
 
 			sam_ba.write_byte(address, value).expect("Failed to write byte");
 		},
@@ -105,6 +102,12 @@ fn main() {
 	}
 }
 
+
+fn parse_u8_hex(arg: Option<String>, name: &str) -> u8 {
+	let arg = arg.expect(&format!("Expected {} argument", name));
+	u8::from_str_radix(&arg, 16)
+		.expect(&format!("Expected {} to be a hexadecimal number", name))
+}
 
 fn parse_u32_hex(arg: Option<String>, name: &str) -> u32 {
 	let arg = arg.expect(&format!("Expected {} argument", name));

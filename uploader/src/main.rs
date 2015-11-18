@@ -90,6 +90,27 @@ fn main() {
 			sam_ba.write_word(address, value).expect("Failed to write word");
 		},
 
+		"read-byte" => {
+			let address = args.next().expect("Expected address argument");
+			let address = u32::from_str_radix(&address, 16)
+				.expect("Expected address to be a hexadecimal number");
+
+			let value = sam_ba.read_byte(address).expect("Failed to read byte");
+
+			print!("{:0>2x}\n", value);
+		},
+		"write-byte" => {
+			let address = args.next().expect("Expected address argument");
+			let value   = args.next().expect("Expected value argument");
+
+			let address = u32::from_str_radix(&address, 16)
+				.expect("Expected address to be a hexadecimal number");
+			let value = u8::from_str_radix(&value, 16)
+				.expect("Expected value to be a hexadecimal number");
+
+			sam_ba.write_byte(address, value).expect("Failed to write byte");
+		},
+
 		_ =>
 			print!("Unknown command: {}\n", command),
 	}

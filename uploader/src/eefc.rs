@@ -51,13 +51,13 @@ impl Eefc {
 }
 
 
-trait Command {
+pub trait Command {
 	type Argument: Argument;
 
 	fn value() -> u8;
 }
 
-trait Argument {
+pub trait Argument {
 	fn value(self) -> u16;
 }
 

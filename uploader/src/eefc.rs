@@ -62,6 +62,15 @@ pub trait Argument {
 }
 
 
+pub struct ErasePageAndWritePage;
+
+impl Command for ErasePageAndWritePage {
+	type Argument = Page;
+
+	fn value() -> u8 { 0x03 }
+}
+
+
 pub struct SetGpnvmBit;
 
 impl Command for SetGpnvmBit {
@@ -77,6 +86,16 @@ impl Command for GetGpnvmBit {
 	type Argument = GpnvmNumber;
 
 	fn value() -> u8 { 0x0d }
+}
+
+
+pub struct Page(pub u16);
+
+impl Argument for Page {
+	fn value(self) -> u16 {
+		let Page(page) = self;
+		page
+	}
 }
 
 

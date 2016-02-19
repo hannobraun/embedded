@@ -1,7 +1,7 @@
 // Initialization code and entry point for the program.
 
 
-#![feature(intrinsics, lang_items, no_std)]
+#![feature(intrinsics, lang_items)]
 
 #![no_main]
 #![no_std]

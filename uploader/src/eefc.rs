@@ -70,16 +70,6 @@ impl Command for ErasePageAndWritePage {
 	fn value() -> u8 { 0x03 }
 }
 
-
-pub struct SetGpnvmBit;
-
-impl Command for SetGpnvmBit {
-	type Argument = GpnvmNumber;
-
-	fn value() -> u8 { 0x0b }
-}
-
-
 pub struct Page(pub u16);
 
 impl Argument for Page {
@@ -89,6 +79,14 @@ impl Argument for Page {
 	}
 }
 
+
+pub struct SetGpnvmBit;
+
+impl Command for SetGpnvmBit {
+	type Argument = GpnvmNumber;
+
+	fn value() -> u8 { 0x0b }
+}
 
 pub enum GpnvmNumber {
 	// Security          = 0,

@@ -79,48 +79,6 @@ fn main() {
 			.expect("Failed to set GPNVM bit");
 		},
 
-		"read-word" => {
-			let address = parse_u32_hex(args.next(), "address");
-
-			let value = sam_ba.read_word(address).expect("Failed to read word");
-
-			print!("{:0>8x}\n", value);
-		},
-		"write-word" => {
-			let address = parse_u32_hex(args.next(), "address");
-			let value   = parse_u32_hex(args.next(), "value");
-
-			sam_ba.write_word(address, value).expect("Failed to write word");
-		},
-
-		"read-byte" => {
-			let address = parse_u32_hex(args.next(), "address");
-
-			let value = sam_ba.read_byte(address).expect("Failed to read byte");
-
-			print!("{:0>2x}\n", value);
-		},
-		"write-byte" => {
-			let address = parse_u32_hex(args.next(), "address");
-			let value   = parse_u8_hex(args.next(), "value");
-
-			sam_ba.write_byte(address, value).expect("Failed to write byte");
-		},
-
-		"read-file" => {
-			let address = parse_u32_hex(args.next(), "address");
-			let length  = parse_u32_hex(args.next(), "length" );
-			let path    = args.next().expect("Expected file path argument");
-
-			let mut file = File::create(&path).expect("Failed to create file");
-
-			for i in 0 .. length {
-				let byte = sam_ba.read_byte(address + i)
-					.expect("Failed to read byte");
-				file.write(&[byte]).expect("Failed to write to file");
-			}
-		},
-
 		"upload-file" => {
 			let path = args.next().expect("Expected file path argument");
 

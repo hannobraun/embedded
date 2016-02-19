@@ -13,4 +13,6 @@ arm-none-eabi-objcopy \
 	output/blink.elf \
 	output/blink.bin &&
 
-bossac --write --verify --boot -R output/blink.bin
+(
+    cd uploader
+    cargo run -- /dev/ttyACM0 upload-file ../output/blink.bin)

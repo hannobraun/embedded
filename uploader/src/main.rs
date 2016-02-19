@@ -19,12 +19,10 @@ extern crate serial;
 
 use std::env;
 use std::fs::File;
-use std::num::ParseIntError;
 
 use byteorder::{
 	LittleEndian,
 	ReadBytesExt,
-	WriteBytesExt,
 };
 
 use eefc::{
@@ -123,23 +121,4 @@ fn main() {
 		_ =>
 			print!("Unknown command: {}\n", command),
 	}
-}
-
-
-fn parse_u8_hex(arg: Option<String>, name: &str) -> u8 {
-	parse_hex(arg, name, u8::from_str_radix)
-}
-
-fn parse_u32_hex(arg: Option<String>, name: &str) -> u32 {
-	parse_hex(arg, name, u32::from_str_radix)
-}
-
-fn parse_hex<T>(
-	arg  : Option<String>,
-	name : &str,
-	parse: fn(&str, u32) -> Result<T, ParseIntError>,
-) -> T {
-	let arg = arg.expect(&format!("Expected {} argument", name));
-	parse(&arg, 16)
-		.expect(&format!("Expected {} to be a hexadecimal number", name))
 }

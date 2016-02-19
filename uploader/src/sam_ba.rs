@@ -60,16 +60,4 @@ impl SamBa {
 		try!(write!(self.port, "W{:0>8X},{:0>8X}#", address, value));
 		Ok(())
 	}
-
-	pub fn read_byte(&mut self, address: u32) -> Result<u8> {
-		try!(write!(self.port, "o{:0>8X},#", address));
-		let result = try!(self.port.read_u8());
-
-		Ok(result)
-	}
-
-	pub fn write_byte(&mut self, address: u32, value: u8) -> Result<()> {
-		try!(write!(self.port, "O{:0>8X},{:0>2X}#", address, value));
-		Ok(())
-	}
 }

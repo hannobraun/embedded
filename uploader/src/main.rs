@@ -112,6 +112,13 @@ fn main() {
 				.expect("Failed erase page and write page");
 			}
 
+			eefc_0
+				.execute_command::<SetGpnvmBit, _>(
+					&mut sam_ba,
+					GpnvmNumber::BootModeSelection,
+				)
+				.expect("Failed to set GPNVM bit");
+
 			print!(
 				"Wrote {} bytes ({} pages)\n",
 				file_length, number_of_pages,

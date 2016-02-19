@@ -80,15 +80,6 @@ impl Command for SetGpnvmBit {
 }
 
 
-pub struct GetGpnvmBit;
-
-impl Command for GetGpnvmBit {
-	type Argument = GpnvmNumber;
-
-	fn value() -> u8 { 0x0d }
-}
-
-
 pub struct Page(pub u16);
 
 impl Argument for Page {

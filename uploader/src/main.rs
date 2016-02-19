@@ -28,7 +28,6 @@ use byteorder::{
 use eefc::{
 	Eefc,
 	ErasePageAndWritePage,
-	GetGpnvmBit,
 	GpnvmNumber,
 	Page,
 	SetGpnvmBit,
@@ -57,24 +56,6 @@ fn main() {
 				.expect("Failed to retrieve version");
 
 			print!("{}", version)
-		},
-
-		"boot-mode" => {
-			let result =
-				eefc_0.execute_command::<GetGpnvmBit, _>(
-					&mut sam_ba,
-					GpnvmNumber::BootModeSelection,
-				)
-				.expect("Failed to get GPNVM bit");
-
-			print!("{:0>8x}\n", result)
-		},
-		"boot-from-flash" => {
-			eefc_0.execute_command::<SetGpnvmBit, _>(
-				&mut sam_ba,
-				GpnvmNumber::BootModeSelection,
-			)
-			.expect("Failed to set GPNVM bit");
 		},
 
 		"upload-file" => {

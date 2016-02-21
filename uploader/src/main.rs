@@ -71,9 +71,9 @@ fn main() {
             // Pages consist of 256 bytes each. A word is 4 bytes long, as ARM
             // is a 32-bit architecture.
             // See sections 7.2.3.1 and 10.4.5 in the data sheet.
-            let page_size_in_bytes = 256;
-            let number_of_pages    = file_length as u32 / page_size_in_bytes;
-            let words_per_page     = page_size_in_bytes / 4;
+            let page_size_bytes = 256;
+            let number_of_pages = file_length as u32 / page_size_bytes;
+            let words_per_page  = page_size_bytes / 4;
 
             if number_of_pages > 1024 {
                 // The SAM3X8E has 512 KiB of memory, but it is divided into

@@ -68,6 +68,10 @@ fn main() {
                 .expect("Failed to read file metadata")
                 .len();
 
+            // Base address of the internal flash memory. See data sheet,
+            // section 7.1.
+            let flash_base_addr = 0x00080000;
+
             // Pages consist of 256 bytes each. A word is 4 bytes long, as ARM
             // is a 32-bit architecture.
             // See sections 7.2.3.1 and 10.4.5 in the data sheet.
@@ -90,7 +94,7 @@ fn main() {
 
             for page in 0 .. number_of_pages {
                 for i in 0 .. words_per_page {
-                    let address = 0x00080000 + page * 256 + i * 4;
+                    let address = flash_base_addr + page * 256 + i * 4;
 
                     let word = file.read_u32::<LittleEndian>()
                         .expect("Failed to read from file");

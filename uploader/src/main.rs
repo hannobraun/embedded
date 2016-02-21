@@ -106,11 +106,12 @@ fn main() {
                         .expect("Failed to write word");
                 }
 
-                eefc_0.execute_command::<ErasePageAndWritePage, _>(
-                    &mut sam_ba,
-                    Page(page as u16),
-                )
-                .expect("Failed erase page and write page");
+                eefc_0
+                    .execute_command::<ErasePageAndWritePage, _>(
+                        &mut sam_ba,
+                        Page(page as u16),
+                    )
+                    .expect("Failed erase page and write page");
             }
 
             eefc_0

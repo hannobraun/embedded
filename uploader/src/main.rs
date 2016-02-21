@@ -72,6 +72,19 @@ fn main() {
             let number_of_pages    = file_length as u32 / page_size_in_bytes;
             let words_per_page     = page_size_in_bytes / 4;
 
+            if number_of_pages > 1024 {
+                // The SAM3X8E has 512 KiB of memory, but it is divided into
+                // two planes of 256 KiB each. The code below doesn't really
+                // take that into account and would silently fail in various
+                // ways, if the file were bigger than 256 KiB.
+                // See sections 7.2.3 and chapter 18 in the data sheet for more
+                // information.
+                panic!("{} {}",
+                    "The file is too big. This program only supports file",
+                    "sizes up to 256 KiB."
+                );
+            }
+
             for page in 0 .. number_of_pages {
                 for i in 0 .. words_per_page {
                     let address = 0x00080000 + page * 256 + i * 4;

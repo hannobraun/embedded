@@ -27,8 +27,8 @@ impl Eefc {
     /// Executes a flash command and returns its result. The commands and
     /// arguments that can be passed to this method are defined below.
     ///
-    /// See data sheet chapter 18.4.3 for the list of commands, and chapter 18.5
-    /// (especially 18.5.2) for information about what's going on in this
+    /// See data sheet chapter 18.4.3 for the list of commands, and chapter
+    /// 18.5 (especially 18.5.2) for information about what's going on in this
     /// method.
     pub fn execute_command<C, A>(&self, sam_ba: &mut SamBa, argument: A)
         -> Result<u32>

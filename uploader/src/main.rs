@@ -63,7 +63,7 @@ fn main() {
 
             let mut file = File::open(&path).expect("Failed to create file");
 
-            let file_length = file
+            let file_size = file
                 .metadata()
                 .expect("Failed to read file metadata")
                 .len();
@@ -76,7 +76,7 @@ fn main() {
             // is a 32-bit architecture.
             // See sections 7.2.3.1 and 10.4.5 in the data sheet.
             let page_size_bytes = 256;
-            let number_of_pages = file_length as u32 / page_size_bytes;
+            let number_of_pages = file_size as u32 / page_size_bytes;
             let words_per_page  = page_size_bytes / 4;
 
             if number_of_pages > 1024 {
@@ -123,7 +123,7 @@ fn main() {
 
             print!(
                 "Wrote {} bytes ({} pages)\n",
-                file_length, number_of_pages,
+                file_size, number_of_pages,
             );
         },
 

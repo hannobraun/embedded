@@ -98,9 +98,8 @@ fn main() {
 
             for page in 0 .. number_of_pages {
                 for i in 0 .. page_size_words {
-                    let address = flash_base_addr
-                        + page * page_size_bytes
-                        + i * word_size_bytes;
+                    let offset  = page * page_size_bytes + i * word_size_bytes;
+                    let address = flash_base_addr + offset;
 
                     let word = file.read_u32::<LittleEndian>()
                         .expect("Failed to read from file");

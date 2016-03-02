@@ -98,6 +98,9 @@ fn main() {
             let number_of_pages =
                 (file_size + page_size_bytes - 1) / page_size_bytes;
 
+            sam_ba.write_word(0x400E0A00, 0x00000600)
+                .expect("Failed to write wait state");
+
             for page in 0 .. number_of_pages {
                 for i in 0 .. page_size_words {
                     let offset  = page * page_size_bytes + i * word_size_bytes;
@@ -110,9 +113,6 @@ fn main() {
                     else {
                         0
                     };
-
-                    sam_ba.write_word(0x400E0A00, 0x00000600)
-                        .expect("Failed to write wait state");
 
                     sam_ba.write_word(address, word)
                         .expect("Failed to write word");

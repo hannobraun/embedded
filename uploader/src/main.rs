@@ -98,6 +98,14 @@ fn main() {
             let number_of_pages =
                 (file_size + page_size_bytes - 1) / page_size_bytes;
 
+            // This sets the number of wait states for flash read/write
+            // operations to 6. See data sheet, section 18.5.1. According to
+            // the errata section, this is required. Otherwise data written can
+            // be corrupted. See section 49.1.1.1.
+            // Please note that I wasn't able to verify that this really is
+            // necessary. However, I was testing with a binary that wasn't
+            // optimized. It is probable that flipping some bits here or there
+            // wouldn't inhibit the functioning of that binary.
             sam_ba.write_word(0x400E0A00, 0x00000600)
                 .expect("Failed to write wait state");
 

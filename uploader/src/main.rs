@@ -81,6 +81,9 @@ fn main() {
                 );
             }
 
+            // Given the check above, we know that the following cast is safe.
+            let file_size = file_size as u32;
+
             // Base address of the internal flash memory. See data sheet,
             // section 7.1.
             let flash_base_addr = 0x00080000;
@@ -89,7 +92,7 @@ fn main() {
             // is a 32-bit architecture.
             // See sections 7.2.3.1 and 10.4.5 in the data sheet.
             let page_size_bytes = 256;
-            let number_of_pages = file_size as u32 / page_size_bytes;
+            let number_of_pages = file_size / page_size_bytes;
             let words_per_page  = page_size_bytes / 4;
 
             for page in 0 .. number_of_pages {

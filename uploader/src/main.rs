@@ -93,8 +93,8 @@ fn main() {
             // See sections 7.2.3.1 and 10.4.5 in the data sheet.
             let word_size_bytes = 4;
             let page_size_bytes = 256;
-            let number_of_pages = file_size / page_size_bytes;
             let page_size_words = page_size_bytes / word_size_bytes;
+            let number_of_pages = file_size / page_size_bytes;
 
             for page in 0 .. number_of_pages {
                 for i in 0 .. page_size_words {

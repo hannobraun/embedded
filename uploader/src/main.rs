@@ -91,15 +91,16 @@ fn main() {
             // Pages consist of 256 bytes each. A word is 4 bytes long, as ARM
             // is a 32-bit architecture.
             // See sections 7.2.3.1 and 10.4.5 in the data sheet.
+            let word_size_bytes = 4;
             let page_size_bytes = 256;
             let number_of_pages = file_size / page_size_bytes;
-            let words_per_page  = page_size_bytes / 4;
+            let words_per_page  = page_size_bytes / word_size_bytes;
 
             for page in 0 .. number_of_pages {
                 for i in 0 .. words_per_page {
                     let address = flash_base_addr
                         + page * page_size_bytes
-                        + i * 4;
+                        + i * word_size_bytes;
 
                     let word = file.read_u32::<LittleEndian>()
                         .expect("Failed to read from file");

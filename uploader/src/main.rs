@@ -94,10 +94,10 @@ fn main() {
             let word_size_bytes = 4;
             let page_size_bytes = 256;
             let number_of_pages = file_size / page_size_bytes;
-            let words_per_page  = page_size_bytes / word_size_bytes;
+            let page_size_words = page_size_bytes / word_size_bytes;
 
             for page in 0 .. number_of_pages {
-                for i in 0 .. words_per_page {
+                for i in 0 .. page_size_words {
                     let address = flash_base_addr
                         + page * page_size_bytes
                         + i * word_size_bytes;

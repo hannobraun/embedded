@@ -94,7 +94,9 @@ fn main() {
             let word_size_bytes = 4;
             let page_size_bytes = 256;
             let page_size_words = page_size_bytes / word_size_bytes;
-            let number_of_pages = file_size / page_size_bytes;
+
+            let number_of_pages =
+                (file_size + page_size_bytes - 1) / page_size_bytes;
 
             for page in 0 .. number_of_pages {
                 for i in 0 .. page_size_words {

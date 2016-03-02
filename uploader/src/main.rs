@@ -101,8 +101,13 @@ fn main() {
                     let offset  = page * page_size_bytes + i * word_size_bytes;
                     let address = flash_base_addr + offset;
 
-                    let word = file.read_u32::<LittleEndian>()
-                        .expect("Failed to read from file");
+                    let word = if offset < file_size {
+                        file.read_u32::<LittleEndian>()
+                            .expect("Failed to read from file")
+                    }
+                    else {
+                        0
+                    };
 
                     sam_ba.write_word(0x400E0A00, 0x00000600)
                         .expect("Failed to write wait state");

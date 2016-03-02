@@ -68,18 +68,7 @@ fn main() {
                 .expect("Failed to read file metadata")
                 .len();
 
-            // Base address of the internal flash memory. See data sheet,
-            // section 7.1.
-            let flash_base_addr = 0x00080000;
-
-            // Pages consist of 256 bytes each. A word is 4 bytes long, as ARM
-            // is a 32-bit architecture.
-            // See sections 7.2.3.1 and 10.4.5 in the data sheet.
-            let page_size_bytes = 256;
-            let number_of_pages = file_size as u32 / page_size_bytes;
-            let words_per_page  = page_size_bytes / 4;
-
-            if number_of_pages > 1024 {
+            if file_size > 256 * 1024 {
                 // The SAM3X8E has 512 KiB of memory, but it is divided into
                 // two planes of 256 KiB each. The code below doesn't really
                 // take that into account and would silently fail in various
@@ -91,6 +80,17 @@ fn main() {
                     "sizes up to 256 KiB."
                 );
             }
+
+            // Base address of the internal flash memory. See data sheet,
+            // section 7.1.
+            let flash_base_addr = 0x00080000;
+
+            // Pages consist of 256 bytes each. A word is 4 bytes long, as ARM
+            // is a 32-bit architecture.
+            // See sections 7.2.3.1 and 10.4.5 in the data sheet.
+            let page_size_bytes = 256;
+            let number_of_pages = file_size as u32 / page_size_bytes;
+            let words_per_page  = page_size_bytes / 4;
 
             for page in 0 .. number_of_pages {
                 for i in 0 .. words_per_page {

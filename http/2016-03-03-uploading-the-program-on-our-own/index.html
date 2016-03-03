@@ -205,7 +205,7 @@ arm-none-eabi-objcopy \
                 <a name="note-9"></a>
                 <span class="footnote-number">[9]</span>
                 <p>
-                    That means we wouldn't even have to write the data to the address where we expect it to end up. Instead, we could just write each page into the first 256 bytes of the flash address space (or anywhere else, really). As long as the data is to the correct position within the page and we execute the write command with the correct page number, everything would still work.
+                    That means we wouldn't even have to write the data to the address where we expect it to end up. Instead, we could just write each page into the first 256 bytes of the flash address space (or anywhere else, really). As long as the data is written to the correct position within the page, and we execute the write command with the correct page number, everything would still work.
                 </p>
             </footer>
 

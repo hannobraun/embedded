@@ -58,7 +58,7 @@ let number_of_pages =
             </pre>
 
             <p>
-                All of this is pretty straight-forward. The flash memory starts at address <code>0x00080000</code>, and that's where we're going to write the program later.<a class="footnote" href="#note-2"> In addition to that, we need some basic values. The size of a word is 4 bytes, since the SAM3X8E is a 32-bit architecture.<a class="footnote" href="#note-3"> The flash memory is divided into 1024 pages, each consisting of 256 bytes.<a class="footnote" href="#note-4">. Lastly, we compute the number of pages we need to write from the size of the file.
+                All of this is pretty straight-forward. The flash memory starts at address <code>0x00080000</code>, and that's where we're going to write the program later.<a class="footnote" href="#note-2">[2]</a> In addition to that, we need some basic values. The size of a word is 4 bytes, since the SAM3X8E is a 32-bit architecture.<a class="footnote" href="#note-3">[3]</a> The flash memory is divided into 1024 pages, each consisting of 256 bytes.<a class="footnote" href="#note-4">[4]</a>. Lastly, we compute the number of pages we need to write from the size of the file.
             </p>
 
             <pre>
@@ -67,7 +67,7 @@ sam_ba.write_word(0x400E0A00, 0x00000600)
             </pre>
 
             <p>
-                Here's a bit of code I'm not sure we actually need. According to the errata section in the data sheet<a class="footnote" href="#note-5">, we need to set the number of wait states to 6. Otherwise "the data may not be correctly written". Settign the wait states to 6 means that flash read/write operations take 7 CPU cycles. We're setting the wait states here by writing to the Flash Mode Register (FMR) of the Enhanced Embedded Flash Controller (EEFC).<a class="footnote" href="#note-6">
+                Here's a bit of code I'm not sure we actually need. According to the errata section in the data sheet<a class="footnote" href="#note-5">[5]</a>, we need to set the number of wait states to 6. Otherwise "the data may not be correctly written". Settign the wait states to 6 means that flash read/write operations take 7 CPU cycles. We're setting the wait states here by writing to the Flash Mode Register (FMR) of the Enhanced Embedded Flash Controller (EEFC).<a class="footnote" href="#note-6">[6]</a>
             </p>
 
             <p>
@@ -106,7 +106,7 @@ for page in 0 .. number_of_pages {
             </p>
 
             <p>
-                After we've written a full page, we need execute a flash command to actually write it to flash memory.<a class="footnote" href="#note-7"> This is because writing the words to the address will actually write them to a buffer, not the flash memory directly. That buffer is as big as a page, and writing to any flash memory address actually writes to the same buffer.<a class="footnote" href="#note-8"> That means, we need to write the page to flash before we start writing the next page. Otherwise we would overwrite the values in the buffer.<a class="footnote" href="#note-9">
+                After we've written a full page, we need execute a flash command to actually write it to flash memory.<a class="footnote" href="#note-7">[7]</a> This is because writing the words to the address will actually write them to a buffer, not the flash memory directly. That buffer is as big as a page, and writing to any flash memory address actually writes to the same buffer.<a class="footnote" href="#note-8">[8]</a> That means, we need to write the page to flash before we start writing the next page. Otherwise we would overwrite the values in the buffer.<a class="footnote" href="#note-9">[9]</a>
             </p>
 
             <pre>

@@ -106,7 +106,7 @@ for page in 0 .. number_of_pages {
             </p>
 
             <p>
-                After we've written a full page, we need execute a flash command to actually write it to flash memory.<a class="footnote" href="#note-7">[7]</a> This is because writing the words to the address will actually write them to a buffer, not the flash memory directly. That buffer is as big as a page, and writing to any flash memory address actually writes to the same buffer.<a class="footnote" href="#note-8">[8]</a> That means, we need to write the page to flash before we start writing the next page. Otherwise we would overwrite the values in the buffer.<a class="footnote" href="#note-9">[9]</a>
+                After we've written a full page, we need execute a flash command to actually write it to flash memory.<a class="footnote" href="#note-7">[7]</a> This is because writing the words to the address will actually write them to a buffer, not the flash memory directly. That buffer is as big as a page, and writing to any flash memory address actually writes to that same buffer.<a class="footnote" href="#note-8">[8]</a> That means, we need to write the page to flash before we start writing the next page. Otherwise we would overwrite the values in the buffer.<a class="footnote" href="#note-9">[9]</a>
             </p>
 
             <pre>

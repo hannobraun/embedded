@@ -67,7 +67,7 @@ sam_ba.write_word(0x400E0A00, 0x00000600)
             </pre>
 
             <p>
-                Here's a bit of code I'm not sure we actually need. According to the errata section in the data sheet<a class="footnote" href="#note-5">[5]</a>, we need to set the number of wait states to 6. Otherwise "the data may not be correctly written". Settign the wait states to 6 means that flash read/write operations take 7 CPU cycles. We're setting the wait states here by writing to the Flash Mode Register (FMR) of the Enhanced Embedded Flash Controller (EEFC).<a class="footnote" href="#note-6">[6]</a>
+                Here's a bit of code I'm not sure we actually need. According to the errata section in the data sheet<a class="footnote" href="#note-5">[5]</a>, we need to set the number of wait states to 6. Otherwise "the data may not be correctly written". Setting the wait states to 6 means that flash read/write operations take 7 CPU cycles. We're setting the wait states here by writing to the Flash Mode Register (FMR) of the Enhanced Embedded Flash Controller (EEFC).<a class="footnote" href="#note-6">[6]</a>
             </p>
 
             <p>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>embedded.hannobraun.de</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+    </head>
+
+    <body>
+        <main>
+            <p class="date">2016-03-04</p>
+            <h1>Small Fixes</h1>
+
+            <p>
+                It's been a while since we looked at our blink program. Since then, I've made a number of small fixes and improvements that I'd like to present today.
+            </p>
+
+            <p>
+                The most prominent source of changes were upgrades to later Rust versions<a class="footnote" href="#note-1">[1]</a>. While upgrading to a newer version of the Rust language generally doesn't require changes to your program, we've been using a number of unstable features, which are not guaranteed to stay the same.
+            </p>
+
+            <p>
+                Let's take a look of two of those features again: <code>no_std</code> and <code>core</code>. To reiterate, <code>no_std</code> indicates that we're not using Rust's standard library. The standard library is designed to run in typical operating system environments, and is not suitable for a microprocessor like the one we're working with.. <code>core</code> indicates that we're using Rust's core library instead. The core library is a subset of the standard library that provides many useful things and can run just about anywhere.
+            </p>
+
+            <p>
+                Both <code>no_std</code> and <code>core</code> have been stabilized, so we don't need to specify them anymore. Here's the updated feature specification:
+            </p>
+
+            <pre>
+#![feature(intrinsics, lang_items)]
+            </pre>
+
+            <p>
+                Hopefully in time, those remaining two will also be stabilized. At that point we'll no longer be required to develop using a nightly version and can rely on stable Rust.
+            </p>
+
+            <p>
+                In addition to being stabilized, <code>no_std</code> has changed a bit. By not using the standard library, we now opt into using the core library automatically. This makes our code a bit simpler. Here's what we had to do previously:
+            </p>
+
+            <pre>
+#![no_std]
+
+
+#[macro_use]
+extern crate core;
+
+use core::prelude::*;
+            </pre>
+
+            <p>
+                An this is what the same code looks like now:
+            </p>
+
+            <pre>
+#![no_std]
+            </pre>
+
+            <p>
+                Doesn't make much of a difference for us, but it certainly makes things easier for anyone who has to figure this out for the first time.
+            </p>
+
+            <p>
+                The rest of the changes concern the build process and were all mad to <code>target.json</code>. I'm going to describe each of those changes separately, and then link to the final version of <code>target.json</code> after those descriptions.
+            </p>
+
+            <p>
+                The first modification to <code>target.json</code> was made because of a linker error that I got when trying to set up the build process on another computer. I'm not 100% sure what caused that error, but I think it's because I had a newer version of <code>arm-none-eabi-gcc</code> there. Here's the error message:
+            </p>
+
+            <pre>
+error: linking with `arm-none-eabi-gcc` failed: exit code: 1
+note: "arm-none-eabi-gcc" "-L" "/home/hanno/.multirust/toolchains/nightly/lib/rustlib/target.json/lib" "output/blink.0.o" "-o" "output/blink.elf" "-Wl,--gc-sections" "-nodefaultlibs" "-L" "output" "-L" "/home/hanno/.multirust/toolchains/nightly/lib/rustlib/target.json/lib" "-Wl,-Bstatic" "-Wl,-Bdynamic" "/home/hanno/Projects/embedded/output/libcore.rlib" "-Tlinker-script.ld"
+note: /usr/lib/gcc/arm-none-eabi/5.3.0/../../../../arm-none-eabi/bin/ld: cannot find crt0.o: No such file or directory
+collect2: error: ld returned 1 exit status
+
+error: aborting due to previous error
+            </pre>
+
+            <p>
+                The important bit of that error message is the following:
+                <code>cannot find crt0.o: No such file or directory</code>. Not sure what that file is, but it seems we don't need it. Passing <code>-nostartfiles</code> to the linker solves the problem, and we can easily do that by adding the following line to <code>target.json</code>:
+            </p>
+
+            <pre>
+"pre-link-args": [ "-nostartfiles" ],
+            </pre>
+
+            <p>
+                The next change is a simplification that I found out about while snooping around the <a href="http://zinc.rs/">zinc.rs</a> repository<a class="footnote" href="#note-2">[2]</a>. Back when we <a href="/2015-05-08-translating-the-program-to-rust">translated the program into Rust</a>, we had to add an empty library called <code>libcompiler-rt.a</code> that the Rust compiler linked to, even though none of its contents were used by our program.
+            </p>
+
+            <p>
+                We can simply tell Rust that we don't need it by adding the following line to <code>target.json</code>:
+            </p>
+
+            <pre>
+"no-compiler-rt": true,
+            </pre>
+
+            <p>
+                The last change was required when a Rust upgrade suddenly caused the following error:
+            </p>
+
+            <pre>
+rustc: /buildslave/rust-buildbot/slave/nightly-dist-rustc-linux/build/src/llvm/lib/CodeGen/MachineFunction.cpp:108: llvm::MachineFunction::MachineFunction(const llvm::Function*, const llvm::TargetMachine&amp;, unsigned int, llvm::MachineModuleInfo&amp;): Assertion `TM.isCompatibleDataLayout(getDataLayout()) &amp;&amp; "Can't create a MachineFunction using a Module with a " "Target-incompatible DataLayout attached\n"' failed.
+            </pre>
+
+            <p>
+                That error is documented in <a href="https://github.com/rust-lang/rust/issues/31367">Rust issue #31367</a>. As per that issue, the solution is simple: Remove the <code>data-layout</code> specification from <code>target.json</code>. No one seems to know what that error is really about, and it's unclear whether that is really a reliable solution, so I hope this won't cause any hard-to-debug bugs in the future.
+            </p>
+
+            <p>
+                That was all. The updated version of <code>target.json</code> looks like this:
+            </p>
+
+            <pre>
+{
+    "llvm-target"         : "thumbv7m-unknown-none-eabi",
+    "linker"              : "arm-none-eabi-gcc",
+    "pre-link-args"       : [ "-nostartfiles" ],
+    "no-compiler-rt"      : true,
+    "target-endian"       : "little",
+    "target-pointer-width": "32",
+    "arch"                : "arm",
+    "os"                  : "none",
+    "executables"         : true
+}
+            </pre>
+
+            <p>
+                That wraps use up for today. As always, the full code is available <a href="https://github.com/hannobraun/embedded">on GitHub</a>. See you next time!
+            </p>
+
+            <hr />
+
+            <footer>
+                <a name="note-1"></a>
+                <span class="footnote-number">[1]</span>
+                <p>
+                    At the time of writing, I'm using one of the most recent Rust versions: <code>rustc 1.9.0-nightly (339a409bf 2016-03-01)</code>
+                </p>
+
+                <a name="note-2"></a>
+                <span class="footnote-number">[2]</span>
+                <p>
+                    I also got an email from a very helpful reader who recommended the same solution. Unfortunately I can't find that email right now and haven't asked whether I'm allowed to mention them by name anyway, but I'd like to use this footnote to give my thanks anyway!
+                </p>
+            </footer>
+
+            <hr />
+        </main>
+
+        <footer>
+            <p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+        </footer>
+    </body>
+</html>

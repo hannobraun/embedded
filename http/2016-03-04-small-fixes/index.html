@@ -12,7 +12,7 @@
             <h1>Small Fixes</h1>
 
             <p>
-                It's been a while since we looked at our blink program. Since then, I've made a number of small fixes and improvements that I'd like to present today.
+                It's been a while since we looked at our blinker program. Since then, I've made a number of small fixes and improvements that I'd like to present today.
             </p>
 
             <p>
@@ -20,7 +20,7 @@
             </p>
 
             <p>
-                Let's take a look of two of those features again: <code>no_std</code> and <code>core</code>. To reiterate, <code>no_std</code> indicates that we're not using Rust's standard library. The standard library is designed to run in typical operating system environments, and is not suitable for a microprocessor like the one we're working with.. <code>core</code> indicates that we're using Rust's core library instead. The core library is a subset of the standard library that provides many useful things and can run just about anywhere.
+                Let's take a look of two of those features again: <code>no_std</code> and <code>core</code>. To reiterate, <code>no_std</code> indicates that we're not using Rust's standard library. The standard library is designed to run in typical operating system environments, and is not suitable for a microprocessor like the one we're working with. <code>core</code> indicates that we're using Rust's core library instead. The core library is a subset of the standard library that provides many useful things and can run just about anywhere.
             </p>
 
             <p>
@@ -50,7 +50,7 @@ use core::prelude::*;
             </pre>
 
             <p>
-                An this is what the same code looks like now:
+                And this is what the same code looks like now:
             </p>
 
             <pre>
@@ -62,14 +62,14 @@ use core::prelude::*;
             </p>
 
             <p>
-                The rest of the changes concern the build process and were all mad to <code>target.json</code>. I'm going to describe each of those changes separately, and then link to the final version of <code>target.json</code> after those descriptions.
+                The rest of the changes concern the build process and were all made to <code>target.json</code>. I'm going to describe each of those changes separately, and then link to the final version of <code>target.json</code> after those descriptions.
             </p>
 
             <p>
                 The first modification to <code>target.json</code> was made because of a linker error that I got when trying to set up the build process on another computer. I'm not 100% sure what caused that error, but I think it's because I had a newer version of <code>arm-none-eabi-gcc</code> there. Here's the error message:
             </p>
 
-            <pre>
+            <pre class="wrap">
 error: linking with `arm-none-eabi-gcc` failed: exit code: 1
 note: "arm-none-eabi-gcc" "-L" "/home/hanno/.multirust/toolchains/nightly/lib/rustlib/target.json/lib" "output/blink.0.o" "-o" "output/blink.elf" "-Wl,--gc-sections" "-nodefaultlibs" "-L" "output" "-L" "/home/hanno/.multirust/toolchains/nightly/lib/rustlib/target.json/lib" "-Wl,-Bstatic" "-Wl,-Bdynamic" "/home/hanno/Projects/embedded/output/libcore.rlib" "-Tlinker-script.ld"
 note: /usr/lib/gcc/arm-none-eabi/5.3.0/../../../../arm-none-eabi/bin/ld: cannot find crt0.o: No such file or directory
@@ -103,16 +103,16 @@ error: aborting due to previous error
                 The last change was required when a Rust upgrade suddenly caused the following error:
             </p>
 
-            <pre>
+            <pre class="wrap">
 rustc: /buildslave/rust-buildbot/slave/nightly-dist-rustc-linux/build/src/llvm/lib/CodeGen/MachineFunction.cpp:108: llvm::MachineFunction::MachineFunction(const llvm::Function*, const llvm::TargetMachine&amp;, unsigned int, llvm::MachineModuleInfo&amp;): Assertion `TM.isCompatibleDataLayout(getDataLayout()) &amp;&amp; "Can't create a MachineFunction using a Module with a " "Target-incompatible DataLayout attached\n"' failed.
             </pre>
 
             <p>
-                That error is documented in <a href="https://github.com/rust-lang/rust/issues/31367">Rust issue #31367</a>. As per that issue, the solution is simple: Remove the <code>data-layout</code> specification from <code>target.json</code>. No one seems to know what that error is really about, and it's unclear whether that is really a reliable solution, so I hope this won't cause any hard-to-debug bugs in the future.
+                That error is documented in <a href="https://github.com/rust-lang/rust/issues/31367">Rust issue #31367</a>. As per that issue, the solution is simple: Remove the <code>data-layout</code> specification from <code>target.json</code>. No one seems to know what that error is really about though, and it's unclear whether that really is a reliable solution, so I hope this won't cause any hard-to-debug problems in the future.
             </p>
 
             <p>
-                That was all. The updated version of <code>target.json</code> looks like this:
+                And that's it. The updated version of <code>target.json</code> looks like this:
             </p>
 
             <pre>
@@ -139,13 +139,13 @@ rustc: /buildslave/rust-buildbot/slave/nightly-dist-rustc-linux/build/src/llvm/l
                 <a name="note-1"></a>
                 <span class="footnote-number">[1]</span>
                 <p>
-                    At the time of writing, I'm using one of the most recent Rust versions: <code>rustc 1.9.0-nightly (339a409bf 2016-03-01)</code>
+                    At the time of writing, I'm using one of the most recent nightly versions of Rust: <code>rustc 1.9.0-nightly (339a409bf 2016-03-01)</code>
                 </p>
 
                 <a name="note-2"></a>
                 <span class="footnote-number">[2]</span>
                 <p>
-                    I also got an email from a very helpful reader who recommended the same solution. Unfortunately I can't find that email right now and haven't asked whether I'm allowed to mention them by name anyway, but I'd like to use this footnote to give my thanks anyway!
+                    I also got an email from a very helpful reader who recommended the same solution. Unfortunately I can't find that email right now and haven't asked whether I'm allowed to mention them by name, but I'd like to use this footnote to give my thanks anyway!
                 </p>
             </footer>
 

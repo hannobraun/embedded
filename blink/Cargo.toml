@@ -1,0 +1,7 @@
+[package]
+name    = "blink"
+version = "0.1.0"
+authors = ["Hanno Braun <mail@hannobraun.de>"]
+
+[dependencies]
+core = { path = "../core" }

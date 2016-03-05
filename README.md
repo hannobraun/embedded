@@ -25,7 +25,7 @@ The blink program is located in the `blink/` directory. You can compile that pro
 
 To upload the program to the Arduino Due, run `./upload` from the root directory. The `upload` script calls `compile`, so you don't need to run `./compile` manually before every upload.
 
-Please note that the `upload` script assumes the microcontroller is connected as `/dev/ttyACM0`. This works on my Arch Linux system, but it may not work on your system. Some Linux systems always have multiple `/dev/ttyAMC*` files, whether something is connected or not. One of them should work for you.
+Please note that the `upload` script assumes the microcontroller is connected as `/dev/ttyACM0`. This works on my Arch Linux system, but it may not work on your system. Some Linux systems always have multiple `/dev/ttyACM*` files, whether something is connected or not. One of them should work for you.
 
 
 ## Changing the Rust Version

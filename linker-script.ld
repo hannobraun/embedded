@@ -1,1 +1,0 @@
-blink/linker-script.ld

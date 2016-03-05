@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>embedded.hannobraun.de</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+    </head>
+
+    <body>
+        <main>
+            <p class="date">2016-03-05</p>
+            <h1>Building With Cargo</h1>
+
+            <p>
+                So far, we've been building our program manually, using the <code>rustc</code> command directly. This is neither convenient nor extensible. If we update the Rust version included in the <code>vendor/rust</code> directory, we need to rebuild <code>libcore</code> manually. And if we ever wanted to use external libraries, we'd have to manage those manually, too.
+            </p>
+
+            <p>
+                There's a good solution for this problem though, and it's called Cargo. Cargo is a build tool and dependency manager for Rust that is included with the Rust compiler. Unless you (or the package maintainer, if you're using a package manager) did something weird, you should already have it, if you have Rust installed on your system.
+            </p>
+
+            <p>
+                Before we can use Cargo to build our program, we need to create a Cargo project for <code>libcore</code>. Since libcore is part of Rust itself, and the core Rust repository doesn't use Cargo (yet), we need to handle that manually.<a class="footnote" href="#note-1">[1]</a>
+            </p>
+
+            <p>
+                Fortunately, this is pretty straight-forward. All we need is a directory that contains a simple `Cargo.toml` and a symbolic link to <code>libcore</code>'s source code (<code>vendor/rust/src/libcore</code>).
+            </p>
+
+            <p>
+                Here's what the <code>Cargo.toml</code> looks like:
+            </p>
+
+            <pre>
+[package]
+name    = "core"
+version = "0.1.0"
+authors = ["Hanno Braun &lt;mail@hannobraun.de&gt;"]
+            </pre>
+
+            <p>
+                That takes care of libcore! Now we need to set up Cargo for the blink program. This took a bit of re-shuffling of the repository contents:
+            </p>
+
+            <ol>
+                <li>
+                    The source code in <code>blink/</code> has been moved into <code>blink/src/</code>.
+                </li>
+                <li>
+                    I took this opportunity to clean up some filenames, as I didn't want to deviate from the standard set by Cargo unnecessarily. I've renamend <code>main.rs</code> to <code>program.rs</code> and <code>init.rs</code> (which is the program's entry point) to <code>main.rs</code>.
+                </li>
+                <li>
+                    The custom target specification (<code>target.json</code>) and the linker script (<code>linker-script.ld</code>) have been moved into the <code>blink/</code> directory.
+                </li>
+            </ol>
+
+            <p>
+                With this reorganization, all that was left was to add a <code>Cargo.toml</code> for the blink project:
+            </p>
+
+            <pre>
+[package]
+name    = "blink"
+version = "0.1.0"
+authors = ["Hanno Braun &lt;mail@hannobraun.de&gt;"]
+
+[dependencies]
+core = { path = "../core" }
+
+            </pre>
+
+            <p>
+                As you can see, it references the core library via the Cargo project that we set up. From now on, Cargo will rebuild the core library automatically, if necessary, so we no longer have to do it manually.
+            </p>
+
+            <p>
+                You can build most Cargo projects by running <code>cargo build</code>, but in our case, that's not possible. Our program needs the custom target specification to work, so we need to tell Cargo about that by running <code>cargo build --target=target.json</code>. For that reason, I've decided to keep the build scripts and just adapt them to use Cargo.
+            </p>
+
+            <p>
+                Here's the updated <code>compile</code> script:
+            </p>
+
+            <pre>
+#!/usr/bin/env bash
+
+cd blink
+cargo build --target=target.json                
+            </pre>
+
+            <p>
+                And here's the updated <code>upload</code> script:
+            </p>
+
+            <pre>
+#!/usr/bin/env bash
+
+DEVICE=/dev/ttyACM0
+
+mkdir -p output
+
+./compile &amp;&amp;
+
+arm-none-eabi-objcopy \
+    -O binary \
+    blink/target/target/debug/blink \
+    output/blink.bin &amp;&amp;
+
+(
+    cd uploader
+    cargo run -- $DEVICE upload-file ../output/blink.bin)
+            </pre>
+
+            <p>
+                Please remember that you need to erase the flash memory by pressing the <code>ERASE</code> button on the Arduino Due, before you can upload the program.
+            </p>
+
+            <p>
+                And that's all there is to it. With Cargo, we have a more robust build system, and could even start to use some external libraries, if we wanted. As always, the full code is available <a href="https://github.com/hannobraun/embedded">on GitHub</a>. See you next time!
+            </p>
+
+            <hr />
+
+            <footer>
+                <a name="note-1"></a>
+                <span class="footnote-number">[1]</span>
+                <p>
+                    Remember, <code>libcore</code> comes included with the Rust compiler, so if we were writing a "normal" Rust program, we could just use it directly, without jumping through any hoops. However, in our case, we're cross-compiling from one platform (Linux on x86_64 in my case) to another (bare-metal ARM). The <code>libcore</code> installed on our system was compiled for the source platform, not the target platform, so it isn't of any use for us.
+                </p>
+            </footer>
+
+            <hr />
+        </main>
+
+        <footer>
+            <p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+        </footer>
+    </body>
+</html>

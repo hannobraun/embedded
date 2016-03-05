@@ -16,9 +16,9 @@ DEVICE=/dev/ttyACM0
 ./compile &&
 
 arm-none-eabi-objcopy \
-	-O binary \
-	output/blink.elf \
-	output/blink.bin &&
+    -O binary \
+    output/blink.elf \
+    output/blink.bin &&
 
 (
     cd uploader

@@ -3,7 +3,7 @@ contains the code I produce. Please check out the accompanying blog at
 http://embedded.hannobraun.de/.
 
 The code in here is written in Rust and runs on the Arduino Due, which has a
-32-bit ARM microcontroller (SAM3X8E) on it.
+32-bit ARM microcontroller (Atmel SAM3X8E) on it.
 
 After cloning the repository, follow these steps to get it working:
 - Run `git submodule update --init`

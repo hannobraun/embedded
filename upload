@@ -17,7 +17,7 @@ DEVICE=/dev/ttyACM0
 
 arm-none-eabi-objcopy \
     -O binary \
-    output/blink.elf \
+    blink/target/target/debug/blink \
     output/blink.bin &&
 
 (

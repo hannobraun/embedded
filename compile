@@ -2,8 +2,5 @@
 
 mkdir -p output
 
-rustc \
-	--target=blink/target.json \
-	-L output \
-	-o output/blink.elf \
-	blink/src/main.rs
+cd blink
+cargo build --target=target.json

@@ -6,4 +6,4 @@ rustc \
 	--target=target.json \
 	-L output \
 	-o output/blink.elf \
-	blink/init.rs
+	blink/src/init.rs

@@ -3,7 +3,7 @@
 mkdir -p output
 
 rustc \
-	--target=target.json \
+	--target=blink/target.json \
 	-L output \
 	-o output/blink.elf \
 	blink/src/init.rs

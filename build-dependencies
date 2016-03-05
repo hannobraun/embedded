@@ -3,6 +3,6 @@
 mkdir -p output
 
 rustc \
-	--target=target.json \
+	--target=blink/target.json \
 	-o output/libcore.rlib \
 	vendor/rust/src/libcore/lib.rs

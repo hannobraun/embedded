@@ -31,12 +31,14 @@ Please note that the `upload` script assumes the microcontroller is connected as
 ## Changing the Rust Version
 
 When you compile the code in this repository, two versions of Rust will be used:
+
 1. The compiler will be the Rust version installed on your system.
 1. The core library will be taken from the Rust version in `vendor/rust`.
 
 The reason for this is, that the code needs to be cross-compiled for another platform, but Rust only includes libraries for the platform that it runs on.
 
 Both versions should match as closely as possible, otherwise it may not compile, or possibly even cause other bugs. To change the version used for `libcore`, do the following:
+
 1. Go to the Rust repository: `cd vendor/rust`
 1. Pull the latest changes: `git pull`
 1. Check out the version you want to use: `git checkout <VERSION>`

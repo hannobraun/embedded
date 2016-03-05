@@ -125,7 +125,8 @@ arm-none-eabi-objcopy \
                 <a name="note-1"></a>
                 <span class="footnote-number">[1]</span>
                 <p>
-                    Remember, <code>libcore</code> comes included with the Rust compiler, so if we were writing a "normal" Rust program, we could just use it directly, without jumping through any hoops. However, in our case, we're cross-compiling from one platform (Linux on x86_64 in my case) to another (bare-metal ARM). The <code>libcore</code> installed on our system was compiled for the source platform, not the target platform, so it isn't of any use for us.
+                    Remember, <code>libcore</code> comes included with the Rust compiler, so if we were writing a "normal" Rust program, we could just use it directly, without jumping through any hoops. However, in our case, we're cross-compiling from one platform (Linux on x86_64 in my case) to another (bare-metal ARM). The <code>libcore</code> that comes with the compiler was compiled for the source platform, not the target platform, so it isn't of any use to us.
+                </p>
                 </p>
             </footer>
 

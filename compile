@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
 
-mkdir -p output
-
 cd blink
 cargo build --target=target.json

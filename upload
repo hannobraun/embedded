@@ -13,6 +13,8 @@ DEVICE=/dev/ttyACM0
 
 # Please don't modify anything from here on, unless you know what you're doing.
 
+mkdir -p output
+
 ./compile &&
 
 arm-none-eabi-objcopy \

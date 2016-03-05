@@ -24,7 +24,7 @@
             </p>
 
             <p>
-                Fortunately, this is pretty straight-forward. All we need is a directory that contains a simple `Cargo.toml` and a symbolic link to <code>libcore</code>'s source code (<code>vendor/rust/src/libcore</code>).
+                Fortunately, this is pretty straight-forward. All we need is a directory that contains a simple `Cargo.toml` and a symbolic link to <code>libcore</code>'s source code (<code>vendor/rust/src/libcore</code>).<a class="footnote" href="#note-2">[2]</a>
             </p>
 
             <p>
@@ -127,6 +127,11 @@ arm-none-eabi-objcopy \
                 <p>
                     Remember, <code>libcore</code> comes included with the Rust compiler, so if we were writing a "normal" Rust program, we could just use it directly, without jumping through any hoops. However, in our case, we're cross-compiling from one platform (Linux on x86_64 in my case) to another (bare-metal ARM). The <code>libcore</code> that comes with the compiler was compiled for the source platform, not the target platform, so it isn't of any use to us.
                 </p>
+
+                <a name="note-2"></a>
+                <span class="footnote-number">[2]</span>
+                <p>
+                    I've picked up this neat trick in <a href="http://os.phil-opp.com/cross-compile-libcore.html">this article by Philipp Oppermann</a>.
                 </p>
             </footer>
 

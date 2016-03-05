@@ -74,7 +74,7 @@ core = { path = "../core" }
             </p>
 
             <p>
-                You can build most Cargo projects by running <code>cargo build</code>, but in our case, that's not possible. Our program needs the custom target specification to work, so we need to tell Cargo about that by running <code>cargo build --target=target.json</code>. For that reason, I've decided to keep the build scripts and just adapt them to use Cargo.
+                You can build most Cargo projects by running <code>cargo build</code>, but in our case, that's not enough. Our program needs the custom target specification to work, so we must tell Cargo about that by running <code>cargo build --target=target.json</code>. For that reason, I've decided to keep the build scripts and just adapt them to use Cargo.
             </p>
 
             <p>

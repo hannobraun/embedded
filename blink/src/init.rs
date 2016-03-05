@@ -7,7 +7,7 @@
 #![no_std]
 
 
-mod main;
+mod program;
 
 pub mod hardware {
 	// Basic definition of the hardware's features
@@ -185,7 +185,7 @@ fn on_reset() {
 	//          think global variables are such a hot idea, so I don't want to
 	//          do anything that supports them, out of pure stubbornness.
 
-	main::start()
+	program::start()
 }
 
 // Used as a handler function for all interrupts we don't want to handle yet.

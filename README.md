@@ -8,7 +8,7 @@ The code in here is written in Rust and runs on the Arduino Due, which has a 32-
 ## Prerequisites
 
 You need the following software to use this repository:
-- A nightly version of [Rust](http://rust-lang.org), preferably the exact same version that is checked out in `vendor/rust`. If this repository has become out of date or you want to use a different Rust version for some other reason, please read "Changing the Rust Version" below.
+- A nightly version of [Rust](http://rust-lang.org), preferably the exact same version that is checked out in `vendor/rust`. If this repository has become out of date or you want to use a different Rust version for some other reason, please read [Changing the Rust Version](#changing-the-rust-version) below.
 - `arm-none-eabi-gcc`: This is a cross-compiler for ARM bare-metal targets. How to get that is platform-dependent, but I'm sure Google will help you out.
 
 I'm developing and testing on Linux exclusively (Arch Linux, at the moment). I don't think there's any fundamental reason why it wouldn't work on other platforms, though. Pull requests welcome!

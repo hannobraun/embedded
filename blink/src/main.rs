@@ -92,7 +92,13 @@ unsafe impl Sync for VectorTable {}
 // The vector table. We're telling the compiler to place this into .vectors
 // section, not where it would normally go (I suppose .rodata). The linker
 // script makes sure that the .vectors section is at the right place.
+//
+// The `#[no_mangle]` is surprisingly important. Without it, LLVM will optimize
+// the vector table away, if compiler optimizations are enabled. If that
+// happens, the resulting executable is only a few bytes large and no longer
+// does anything.
 #[link_section=".vectors"]
+#[no_mangle]
 pub static VECTOR_TABLE: VectorTable = VectorTable {
 	// TODO: Find out why this is &_estack and not just _estack. I was able to
 	//       find documentation stating this fact, but offering no explanation.

@@ -19,7 +19,7 @@ mkdir -p output
 
 arm-none-eabi-objcopy \
     -O binary \
-    blink/target/target/debug/blink \
+    blink/target/target/release/blink \
     output/blink.bin &&
 
 (

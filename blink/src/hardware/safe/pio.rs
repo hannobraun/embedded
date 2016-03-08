@@ -1,4 +1,5 @@
 use core::marker::PhantomData;
+use core::ptr;
 
 use hardware::base::pio;
 
@@ -71,25 +72,45 @@ impl<Status, OutputStatus> Pin<Status, OutputStatus> {
 //       return a pin with output_status::Undefined.
 impl<OutputStatus> Pin<status::Undefined, OutputStatus> {
 	pub fn enable(self) -> Pin<status::Enabled, OutputStatus> {
-		unsafe { (*self.controller).pio_enable = self.mask };
+		unsafe {
+			ptr::write_volatile(
+				&mut (*self.controller).pio_enable,
+				self.mask,
+			);
+		}
 		Pin::new(self.mask, self.controller)
 	}
 }
 
 impl Pin<status::Enabled, output_status::Undefined> {
 	pub fn enable_output(self) -> Pin<status::Enabled, output_status::Enabled> {
-		unsafe { (*self.controller).output_enable = self.mask };
+		unsafe {
+			ptr::write_volatile(
+				&mut (*self.controller).output_enable,
+				self.mask,
+			);
+		};
 		Pin::new(self.mask, self.controller)
 	}
 }
 
 impl Pin<status::Enabled, output_status::Enabled> {
 	pub fn set_output(&self) {
-		unsafe { (*self.controller).set_output_data = self.mask };
+		unsafe {
+			ptr::write_volatile(
+				&mut (*self.controller).set_output_data,
+				self.mask,
+			);
+		};
 	}
 
 	pub fn clear_output(&self) {
-		unsafe { (*self.controller).clear_output_data = self.mask };
+		unsafe {
+			ptr::write_volatile(
+				&mut (*self.controller).clear_output_data,
+				self.mask,
+			);
+		};
 	}
 }
 

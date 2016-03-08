@@ -1,4 +1,5 @@
 use core::num::Wrapping;
+use core::ptr;
 
 use hardware::base::rtt::RTT;
 
@@ -13,7 +14,12 @@ impl Timer {
 	/// coexist peacefully without confusing each other.
 	pub fn new() -> Timer {
 		// Set the timer to a resolution of a millisecond
-		unsafe { (*RTT).mode = 0x00000020; }
+		unsafe {
+			ptr::write_volatile(
+				&mut (*RTT).mode,
+				0x00000020,
+			);
+		}
 		Timer
 	}
 
@@ -31,7 +37,9 @@ impl Timer {
 		//       value is atomic and I can't really read some in-between state.
 		//       In that case, reading twice doesn't make any sense and I don't
 		//       really understand what that comment from the data sheet means.
-		unsafe { (*RTT).value }
+		unsafe {
+			ptr::read_volatile(&(*RTT).value)
+		}
 	}
 
 	/// Sleep for the given number of milliseconds.

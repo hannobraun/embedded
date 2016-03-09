@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 
 cd blink
-#cargo rustc --release --target=target.json -- -Z verbose -Z debug-llvm
 cargo build --release --target=target.json

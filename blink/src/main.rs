@@ -24,6 +24,7 @@ pub mod hardware {
 }
 
 pub mod rust_base;
+pub mod volatile;
 
 
 // This is the top of the stack, as provided to us by the linker.

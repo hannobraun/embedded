@@ -2,14 +2,17 @@
 // See data sheet, chapter 13.
 
 
+use volatile::Volatile;
+
+
 // Real-time Timer user interface. See data sheet, chapter 13.5.
 // TODO: I'm not sure what guarantees the compiler makes about the memory layout
 //       of structs. Do I have to use #[repr(C)] or something similar?
 pub struct Rtt {
-	pub mode  : u32,
-	pub alarm : u32,
-	pub value : u32,
-	pub status: u32,
+	pub mode  : Volatile<u32>,
+	pub alarm : Volatile<u32>,
+	pub value : Volatile<u32>,
+	pub status: Volatile<u32>,
 }
 
 

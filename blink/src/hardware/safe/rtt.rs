@@ -1,5 +1,4 @@
 use core::num::Wrapping;
-use core::ptr;
 
 use hardware::base::rtt::RTT;
 
@@ -15,11 +14,9 @@ impl Timer {
 	pub fn new() -> Timer {
 		// Set the timer to a resolution of a millisecond
 		unsafe {
-			ptr::write_volatile(
-				&mut (*RTT).mode,
-				0x00000020,
-			);
+			(*RTT).mode.write(0x00000020)
 		}
+
 		Timer
 	}
 
@@ -38,7 +35,7 @@ impl Timer {
 		//       In that case, reading twice doesn't make any sense and I don't
 		//       really understand what that comment from the data sheet means.
 		unsafe {
-			ptr::read_volatile(&(*RTT).value)
+			(*RTT).value.read()
 		}
 	}
 

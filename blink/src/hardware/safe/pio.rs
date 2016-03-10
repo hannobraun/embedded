@@ -78,6 +78,7 @@ impl<OutputStatus> Pin<status::Undefined, OutputStatus> {
 				self.mask,
 			);
 		}
+
 		Pin::new(self.mask, self.controller)
 	}
 }
@@ -90,6 +91,7 @@ impl Pin<status::Enabled, output_status::Undefined> {
 				self.mask,
 			);
 		};
+
 		Pin::new(self.mask, self.controller)
 	}
 }

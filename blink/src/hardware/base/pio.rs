@@ -5,88 +5,91 @@
 #![allow(dead_code, unused)]
 
 
+use volatile::Volatile;
+
+
 // A Pio controller. See Datasheet, chapter 31.7.
 // TODO: I'm not sure what guarantees the compiler makes about the memory layout
 //       of structs. Do I have to use #[repr(C)] or something similar?
 pub struct Controller {
-	pub pio_enable : u32,
-	pub pio_disable: u32,
-	pub pio_status : u32,
+	pub pio_enable : Volatile<u32>,
+	pub pio_disable: Volatile<u32>,
+	pub pio_status : Volatile<u32>,
 
-	pub _reserved_1: u32,
+	pub _reserved_1: Volatile<u32>,
 
-	pub output_enable : u32,
-	pub output_disable: u32,
-	pub output_status : u32,
+	pub output_enable : Volatile<u32>,
+	pub output_disable: Volatile<u32>,
+	pub output_status : Volatile<u32>,
 
-	pub _reserved_2: u32,
+	pub _reserved_2: Volatile<u32>,
 
-	pub glitch_input_filter_enable : u32,
-	pub glitch_input_filter_disable: u32,
-	pub glitch_input_filter_status : u32,
+	pub glitch_input_filter_enable : Volatile<u32>,
+	pub glitch_input_filter_disable: Volatile<u32>,
+	pub glitch_input_filter_status : Volatile<u32>,
 
-	pub _reserved_3: u32,
+	pub _reserved_3: Volatile<u32>,
 
-	pub set_output_data   : u32,
-	pub clear_output_data : u32,
-	pub output_data_status: u32,
-	pub pin_data_status   : u32,
+	pub set_output_data   : Volatile<u32>,
+	pub clear_output_data : Volatile<u32>,
+	pub output_data_status: Volatile<u32>,
+	pub pin_data_status   : Volatile<u32>,
 
-	pub interrupt_enable : u32,
-	pub interrupt_disable: u32,
-	pub interrupt_mask   : u32,
-	pub interrupt_status : u32,
+	pub interrupt_enable : Volatile<u32>,
+	pub interrupt_disable: Volatile<u32>,
+	pub interrupt_mask   : Volatile<u32>,
+	pub interrupt_status : Volatile<u32>,
 
-	pub multi_driver_enable : u32,
-	pub multi_driver_disable: u32,
-	pub multi_driver_status : u32,
+	pub multi_driver_enable : Volatile<u32>,
+	pub multi_driver_disable: Volatile<u32>,
+	pub multi_driver_status : Volatile<u32>,
 
-	pub _reserved_4: u32,
+	pub _reserved_4: Volatile<u32>,
 
-	pub pull_up_disable   : u32,
-	pub pull_up_enable    : u32,
-	pub pad_pull_up_status: u32,
+	pub pull_up_disable   : Volatile<u32>,
+	pub pull_up_enable    : Volatile<u32>,
+	pub pad_pull_up_status: Volatile<u32>,
 
-	pub _reserved_5: u32,
+	pub _reserved_5: Volatile<u32>,
 
-	pub peripheral_ab_select: u32,
+	pub peripheral_ab_select: Volatile<u32>,
 
-	pub _reserved_6: [u32; 3],
+	pub _reserved_6: [Volatile<u32>; 3],
 
-	pub system_clock_glitch_input_filter_select                 : u32,
-	pub debouncing_input_filter_select                          : u32,
-	pub glitch_or_debouncing_input_filter_clock_selection_status: u32,
-	pub slow_clock_divider_debouncing                           : u32,
+	pub system_clock_glitch_input_filter_select                 : Volatile<u32>,
+	pub debouncing_input_filter_select                          : Volatile<u32>,
+	pub glitch_or_debouncing_input_filter_clock_selection_status: Volatile<u32>,
+	pub slow_clock_divider_debouncing                           : Volatile<u32>,
 
-	pub _reserved_7: [u32; 4],
+	pub _reserved_7: [Volatile<u32>; 4],
 
-	pub output_write_enable : u32,
-	pub output_write_disable: u32,
-	pub output_write_status : u32,
+	pub output_write_enable : Volatile<u32>,
+	pub output_write_disable: Volatile<u32>,
+	pub output_write_status : Volatile<u32>,
 
-	pub _reserved_8: u32,
+	pub _reserved_8: Volatile<u32>,
 
-	pub additional_interrupt_modes_enable : u32,
-	pub additional_interrupt_modes_disable: u32,
-	pub additional_interrupt_modes_mask   : u32,
+	pub additional_interrupt_modes_enable : Volatile<u32>,
+	pub additional_interrupt_modes_disable: Volatile<u32>,
+	pub additional_interrupt_modes_mask   : Volatile<u32>,
 
-	pub _reserved_9: u32,
+	pub _reserved_9: Volatile<u32>,
 
-	pub edge_select      : u32,
-	pub level_select     : u32,
-	pub edge_level_status: u32,
+	pub edge_select      : Volatile<u32>,
+	pub level_select     : Volatile<u32>,
+	pub edge_level_status: Volatile<u32>,
 
-	pub _reserved_a: u32,
+	pub _reserved_a: Volatile<u32>,
 
-	pub falling_edge_low_level_select: u32,
-	pub rising_edge_high_level_select: u32,
-	pub fall_rise_low_high_status    : u32,
+	pub falling_edge_low_level_select: Volatile<u32>,
+	pub rising_edge_high_level_select: Volatile<u32>,
+	pub fall_rise_low_high_status    : Volatile<u32>,
 
-	pub _reserved_b: u32,
+	pub _reserved_b: Volatile<u32>,
 
-	pub lock_status         : u32,
-	pub write_protect_mode  : u32,
-	pub write_protect_status: u32,
+	pub lock_status         : Volatile<u32>,
+	pub write_protect_mode  : Volatile<u32>,
+	pub write_protect_status: Volatile<u32>,
 }
 
 

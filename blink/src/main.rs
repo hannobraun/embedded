@@ -180,17 +180,16 @@ fn on_reset() {
     //          better have understanding of why I'm doing it afterwards, than
     //          just do it from the start without really understanding the
     //          reason.
-    // TODO: This function doesn't initialize the .bss segment to zero, as init
-    //       code would normally do. This doesn't make any difference right now,
-    //       because there are no uninitialized global variables in this
-    //       program. I'm wary of just doing it, for two reasons:
-    //       1. I'm not sure why it needs to be done at all. According to my
-    //          understanding, C doesn't guarantee that variables are
-    //          initialized with any given value, so why should global variables
-    //          be different?
-    //       2. Even if there is a good reason (as there probably is), I don't
-    //          think global variables are such a hot idea, so I don't want to
-    //          do anything that supports them, out of pure stubbornness.
+
+    // TODO: We should initialize the .bss segment here by writing zeros into
+    //       it. The .bss segment contains uninitialized global variables, and
+    //       while I don't actually think that Rust itself uses the .bss
+    //       segment (I might be totally wrong about this), we might want to
+    //       link to C libraries that require that segment.
+    //       Since I don't have a test case right now to verify if that the
+    //       code I would write for this is correct, I opted not to do this at
+    //       the moment. Once there is a test case, this should be a pretty
+    //       straight-forward thing to do.
 
     program::start()
 }

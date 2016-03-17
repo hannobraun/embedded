@@ -80,12 +80,8 @@ impl<Status, OutputStatus> Pin<Status, OutputStatus> {
     }
 }
 
-// TODO: This type parameters for this implementation block may not be correct.
-//       They assume that the output status is preserved when a pin is disabled
-//       or enabled. This may not be the case. It might be safer to always
-//       return a pin with output_status::Undefined.
 impl<OutputStatus> Pin<status::Undefined, OutputStatus> {
-    pub fn enable(self) -> Pin<status::Enabled, OutputStatus> {
+    pub fn enable(self) -> Pin<status::Enabled, output_status::Undefined> {
         unsafe {
             (*self.controller).pio_enable.write(self.mask)
         }
@@ -95,7 +91,9 @@ impl<OutputStatus> Pin<status::Undefined, OutputStatus> {
 }
 
 impl Pin<status::Enabled, output_status::Undefined> {
-    pub fn enable_output(self) -> Pin<status::Enabled, output_status::Enabled> {
+    pub fn enable_output(self)
+        -> Pin<status::Enabled, output_status::Enabled>
+    {
         unsafe {
             (*self.controller).output_enable.write(self.mask)
         }

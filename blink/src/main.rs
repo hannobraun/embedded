@@ -7,6 +7,9 @@
 #![no_std]
 
 
+use core::ptr;
+
+
 mod program;
 
 pub mod hardware {
@@ -27,9 +30,13 @@ pub mod rust_base;
 pub mod volatile;
 
 
-// This is the top of the stack, as provided to us by the linker.
+// These are various memory addresses provided by the linker.
 extern {
     static _estack: u32;
+
+    static mut _etext    : u32;
+    static mut _srelocate: u32;
+    static mut _erelocate: u32;
 }
 
 
@@ -158,28 +165,29 @@ pub static VECTOR_TABLE: VectorTable = VectorTable {
 
 
 fn on_reset() {
-    // TODO: This function doesn't copy the .relocate segment into RAM, as init
-    //       code would normally do. We're getting away with this, because this
-    //       program doesn't use any global variables (or more generally,
-    //       doesn't have anything that would go into the .data section). Please
-    //       be aware that what might be mistaken for global variables in this
-    //       file are actually global constants, which go into the .rodata
-    //       section. The problem is that if there were global variables, their
-    //       initial value would not be set and the program would just fail
-    //       silently. I see two solutions for this:
-    //       1. Decide that we're never going to use global variables and remove
-    //          support for the .relocate section from the linker script. I
-    //          think if that were done, an attempted write to a global variable
-    //          might fail the program outright, because the global variable
-    //          would reside in ROM. This is just speculation, however, so more
-    //          research is required before implementing this solution.
-    //       2. Just copy the .relocate segment like any sane microcontroller
-    //          program would do. This would definitely be a safe solution, and
-    //          the only reason I'm not doing it right now is that it reeks of
-    //          cargo cult. I'd rather be bitten from not doing it and gain a
-    //          better have understanding of why I'm doing it afterwards, than
-    //          just do it from the start without really understanding the
-    //          reason.
+    // Copy mutable global variables from the flash memory into RAM, where they
+    // can be used. Please note that while I tested this when I wrote it, there
+    // is, as I'm writing this, no code in this program that actually uses
+    // global variables. If you make changes here, please make sure you test
+    // thoroughly.
+    // Also be aware that the compiler might optimize away global variables, so
+    // having a `static mut` in the code doesn't actually mean this code here
+    // is going to be needed. The best approach I found is to test with a debug
+    // build.
+    unsafe {
+        let mut src = &mut _etext     as *const u32;
+        let mut dst = &mut _srelocate as *mut u32;
+
+        while dst < &mut _erelocate as *mut u32 {
+            ptr::write_volatile(
+                dst,
+                ptr::read_volatile(src),
+            );
+
+            src = src.offset(1);
+            dst = dst.offset(1);
+        }
+    }
 
     // TODO: We should initialize the .bss segment here by writing zeros into
     //       it. The .bss segment contains uninitialized global variables, and

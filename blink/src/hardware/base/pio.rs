@@ -9,8 +9,7 @@ use volatile::Volatile;
 
 
 // A Pio controller. See Datasheet, chapter 31.7.
-// TODO: I'm not sure what guarantees the compiler makes about the memory layout
-//       of structs. Do I have to use #[repr(C)] or something similar?
+#[repr(C)]
 pub struct Controller {
 	pub pio_enable : Volatile<u32>,
 	pub pio_disable: Volatile<u32>,

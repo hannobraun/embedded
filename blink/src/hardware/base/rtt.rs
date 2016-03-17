@@ -6,8 +6,7 @@ use volatile::Volatile;
 
 
 // Real-time Timer user interface. See data sheet, chapter 13.5.
-// TODO: I'm not sure what guarantees the compiler makes about the memory layout
-//       of structs. Do I have to use #[repr(C)] or something similar?
+#[repr(C)]
 pub struct Rtt {
 	pub mode  : Volatile<u32>,
 	pub alarm : Volatile<u32>,

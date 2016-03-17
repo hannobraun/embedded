@@ -13,26 +13,38 @@ pub fn f() -> Controller { Controller(pio::PIO_F) }
 
 pub struct Controller(*mut pio::Controller);
 
-// TODO: Generate functions for all pins with a macro.
-impl Controller {
-    /// Create a new interface to a pin of this controller.
-    ///
-    /// This function is unsafe, as only one Pin instance should exist per Pin.
-    /// If multiple instances exist, the compiler can not statically enforce the
-    /// correct use of the API.
-    ///
-    /// Initially, both the status and the output status are undefined. This has
-    /// two reasons:
-    /// - The pin might have been used before during the program. We don't know
-    ///   what status it was left in.
-    /// - After the system has been powered up, we can't rely on pins being in a
-    ///   specific state (see data sheet, chapter 31.5.2).
-    pub unsafe fn pin_27(&self)
-        -> Pin<status::Undefined, output_status::Undefined>
-    {
-        let &Controller(controller) = self;
-        Pin::new(pio::P27, controller)
+macro_rules! impl_controller {
+    ( $($number:expr, $fn_name:ident, $const_name:ident;)* ) => {
+        impl Controller {
+            $(
+                /// Create a new interface to pin $number of this controller.
+                ///
+                /// This function is unsafe, as only one Pin instance should
+                /// exist per Pin. If multiple instances exist, the compiler
+                /// can not statically enforce the correct use of the API.
+                ///
+                /// Initially, both the status and the output status are
+                /// undefined. This has two reasons:
+                /// - The pin might have been used before during the program.
+                ///   We don't know what status it was left in.
+                /// - After the system has been powered up, we can't rely on
+                ///   pins being in a specific state (see data sheet, chapter
+                ///   31.5.2).
+                pub unsafe fn $fn_name(&self)
+                    -> Pin<status::Undefined, output_status::Undefined>
+                {
+                    let &Controller(controller) = self;
+                    Pin::new(pio::$const_name, controller)
+                }
+            )*
+        }
     }
+}
+
+// Generate `Controller` implementation. Each line generates a function that
+// returns a specific pin. More functions can be added as needed.
+impl_controller! {
+    27, pin_27, P27;
 }
 
 

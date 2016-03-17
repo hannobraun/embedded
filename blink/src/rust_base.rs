@@ -8,19 +8,19 @@
 
 #[lang = "panic_fmt"]
 pub extern fn panic_fmt() {
-	// TODO: Print a message to serial output, if available and reset the
-	//       system.
-	loop {}
+    // TODO: Print a message to serial output, if available and reset the
+    //       system.
+    loop {}
 }
 
 #[lang = "stack_exhausted"]
 pub extern fn stack_exhausted() {
-	panic!("Stack exhausted");
+    panic!("Stack exhausted");
 }
 
 #[lang = "eh_personality"]
 pub extern fn eh_personality() {
-	panic!("eh_personality function has been called")
+    panic!("eh_personality function has been called")
 }
 
 

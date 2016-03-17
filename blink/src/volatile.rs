@@ -1,6 +1,7 @@
 use core::ptr;
 
 
+#[repr(C)]
 pub struct Volatile<T> {
     value: T,
 }

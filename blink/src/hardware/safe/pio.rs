@@ -53,8 +53,11 @@ impl_controller! {
 /// Pin has two type parameters that encode its current status. This enables
 /// the compiler to enforce correct use of the API at compile-time, e.g. making
 /// it impossible to set an output value on a pin that is configured for input.
-// TODO: Pin restricts the capabilities of the underlying hardware severely, by
-//       limiting the operations it supports to only one pin at a time.
+///
+/// Please note that this abstraction restricts the capabilities of the
+/// underlying hardware by limiting the operations it supports to only one pin
+/// at a time. If you need to manipulate multiple pins at once in performance-
+/// sensitive code, this abstraction might not be the right fit.
 pub struct Pin<Status, OutputStatus> {
     mask      : u32,
     controller: *mut pio::Controller,

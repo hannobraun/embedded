@@ -1,9 +1,6 @@
 // Parallel I/O code for Atmel SAM3X.
 // See Datasheet, chapter 31.
 
-// TODO: Remove, once this module is moved into a library.
-#![allow(dead_code, unused)]
-
 
 use volatile::Volatile;
 

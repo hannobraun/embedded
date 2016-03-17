@@ -31,6 +31,10 @@ pub mod volatile;
 
 
 // These are various memory addresses provided by the linker.
+//
+// I'm not sure why it works that way, but we need to access those by
+// reference to get the address. See:
+// http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0803b/CHDBIJJD.html
 extern {
     static _estack: u32;
 
@@ -108,9 +112,6 @@ unsafe impl Sync for VectorTable {}
 #[link_section=".vectors"]
 #[no_mangle]
 pub static VECTOR_TABLE: VectorTable = VectorTable {
-    // TODO: Find out why this is &_estack and not just _estack. I was able to
-    //       find documentation stating this fact, but offering no explanation.
-    //       See http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0803b/CHDBIJJD.html
     initial_stack_pointer: &_estack,
 
     on_reset: on_reset,

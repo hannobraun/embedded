@@ -117,12 +117,12 @@ impl Pin<status::Enabled, output_status::Enabled> {
 }
 
 
-mod status {
+pub mod status {
     pub struct Undefined;
     pub struct Enabled;
 }
 
-mod output_status {
+pub mod output_status {
     pub struct Undefined;
     pub struct Enabled;
 }

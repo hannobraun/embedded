@@ -17,6 +17,7 @@ pub mod hardware {
     pub mod base {
         pub mod pio;
         pub mod rtt;
+        pub mod wdt;
     }
 
     // Safe API to the hardware's features

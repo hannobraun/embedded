@@ -2,6 +2,11 @@ use hardware::safe::pio;
 use hardware::safe::rtt::Timer;
 
 
+extern {
+    fn WDT_Restart(wdt: *mut u32);
+}
+
+
 pub fn start() {
     // Pin 27 of the PIOB parallel I/O controller corresponds to pin 13 on the
     // Arduino Due, which is the built-in LED (labelled "L").
@@ -12,10 +17,9 @@ pub fn start() {
 
     let timer = Timer::new();
 
-    // TODO: Since we're not doing anything about the watchdog, the program is
-    //       being restarted every 17-18 seconds. This messes up our nice
-    //       blinking pattern.
     loop {
+        unsafe { WDT_Restart(0x400E1A50 as *mut u32) };
+
         led.set_output();
         timer.sleep_ms(200);
         led.clear_output();

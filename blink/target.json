@@ -2,6 +2,7 @@
     "llvm-target"         : "thumbv7m-unknown-none-eabi",
     "linker"              : "arm-none-eabi-gcc",
     "pre-link-args"       : [ "-nostartfiles", "-Tlinker-script.ld" ],
+    "post-link-args"      : [ "-l:libsam_sam3x8e_gcc_rel.a" ],
     "no-compiler-rt"      : true,
     "target-endian"       : "little",
     "target-pointer-width": "32",

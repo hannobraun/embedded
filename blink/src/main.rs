@@ -24,6 +24,7 @@ pub mod hardware {
     pub mod safe {
         pub mod pio;
         pub mod rtt;
+        pub mod wdt;
     }
 }
 

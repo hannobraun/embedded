@@ -1,14 +1,6 @@
-use hardware::base::wdt::{
-    WDT,
-    Wdt,
-};
+use hardware::base::wdt::WDT;
 use hardware::safe::pio;
 use hardware::safe::rtt::Timer;
-
-
-extern {
-    fn WDT_Restart(wdt: *mut Wdt);
-}
 
 
 pub fn start() {
@@ -22,7 +14,7 @@ pub fn start() {
     let timer = Timer::new();
 
     loop {
-        unsafe { WDT_Restart(WDT) };
+        unsafe { (*WDT).control.write(0xA5000001); }
 
         led.set_output();
         timer.sleep_ms(200);

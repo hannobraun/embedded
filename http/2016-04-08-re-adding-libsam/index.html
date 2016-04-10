@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>embedded.hannobraun.de</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+    </head>
+
+    <body>
+        <main>
+            <p class="date">2016-04-08</p>
+            <h1>Re-Adding libsam</h1>
+
+            <p>
+                If you've followed this blog from the beginning, you'll know that I started out with a pretty standard Arduino sketch, and reduced it piece by piece, until I arrived at a minimal Rust program. This was an awesome approach. It allowed me to verify every small step before moving on to the next one. Writing a working Rust program from scratch would have been infinitely harder.
+            </p>
+
+            <p>
+                However, since I've finished the minimal Rust program and started adding features to it, I could no longer take advantage of working code when building those new features. Sometimes the feature was simple and this didn't really matter. Other times it caused me some problems, especially given the very limited debugging capabilities I have right now (all I can do to transmit information from the program to myself is blink the LED in various patterns)<a class="footnote" href="#note-1">[1]</a>.
+            </p>
+
+            <p>
+                When I finally ran into a wall at some point, I decided I needed a better solution. After some thinking, I came up with this idea: There are various C libraries floating around that are written for the express purpose of allowing easy access to the hardware. Why not use one of those when first building a new feature? I still want to write everything myself in Rust (my goal is to understand everything from the bottom up, after all), but I can prototype a new feature using 3rd party code, and then replace it bit by bit with my own.
+            </p>
+
+            <p>
+                After looking around for a while, I decided to use a library called <code>libsam</code> that I found in the <a href="https://github.com/arduino/Arduino">Arduino repository</a><a class="footnote" href="#note-2">[2]</a>. It seems straight-forward, and it's used by the Arduino code, so at least I know it works.
+            </p>
+
+            <p>
+                I decided to build <code>libsam</code> by hand and add the compiled library to the repository, as this is the easiest solution for now.<a class="footnote" href="#note-3">[3]</a> Doing that turned out to be straight-forward. Integrating it was just as straight-forward, as I just had to tell the linker to link the library by passing <code>-l:libsam_sam3x8e_gcc_rel.a</code> in <code>target.json</code>. Here's how that looks:
+            </p>
+
+            <pre>
+{
+    "llvm-target"         : "thumbv7m-unknown-none-eabi",
+    "linker"              : "arm-none-eabi-gcc",
+    "pre-link-args"       : [ "-nostartfiles", "-Tlinker-script.ld" ],
+    <strong>"post-link-args"      : [ "-l:libsam_sam3x8e_gcc_rel.a" ],</strong>
+    "no-compiler-rt"      : true,
+    "target-endian"       : "little",
+    "target-pointer-width": "32",
+    "arch"                : "arm",
+    "os"                  : "none",
+    "executables"         : true
+}
+
+            </pre>
+
+            <p>
+                Now that the library is available, we can use its functions by declaring them as extern functions in Rust:
+            </p>
+
+            <pre>
+extern {
+    fn WDT_Restart(wdt: *mut u32);
+}
+            </pre>
+
+            <p>
+                This function restarts the watchdog timer. I'm not going to explain what this means right now, as I plan to make the watchdog timer the topic of the next article.
+            </p>
+
+            <p>
+                Please note that the function is not defined exactly as it is in the C code. There, it takes a pointer to a struct that defines the user interface to the watchdog timer. This does not matter though. A pointer is just an address, and as long as we pass it the right address, the function won't know the difference.
+            </p>
+
+            <p>
+                Here's how we use that function in the code:
+            </p>
+
+            <pre>
+// Initialization code omitted for brevity
+
+loop {
+    unsafe { WDT_Restart(0x400E1A50 as *mut u32) };
+
+    // LED blinking code omitted
+}
+            </pre>
+
+            <p>
+                Here we just call the function, and pass it the memory address of the watchdog's user interface. Since this is a C function that could do all kinds of things to break our program, this requires an <code>unsafe</code> block.
+            </p>
+
+            <p>
+                As I said above, I'm planning to make the watchdog the topic of my next article, so I won't go into it any further right now<a class="footnote" href="#note-4">[4]</a>.
+            </p>
+
+            <p>
+                And that's it for today. As always, the full code is available <a href="https://github.com/hannobraun/embedded">on GitHub</a>. See you next time!
+            </p>
+
+            <hr />
+
+            <footer>
+                <a name="note-1"></a>
+                <span class="footnote-number">[1]</span>
+                <p>
+                    And believe me, I've tried building up my debugging capability. This is one of those hard features that I'm talking about.
+                </p>
+
+                <a name="note-2"></a>
+                <span class="footnote-number">[2]</span>
+                <p>
+                    The other contenders were <a href="http://www.arm.com/products/processors/cortex-m/cortex-microcontroller-software-interface-standard.php">CMSIS</a> and <a href="http://www.atmel.com/tools/avrsoftwareframework.aspx">ASF</a>. CMSIS is targetted at all ARM microcontrollers and doesn't seem to be a huge help for some of the Atmel-specific things I need to do. ASF is by Atmel, but it is intended to be used in Atmel Studio, Atmel's IDE. There's a standalone version, too, but it seemed much more complicated than libsam. It also wasn't obvious how to build it.
+                </p>
+
+                <a name="note-3"></a>
+                <span class="footnote-number">[3]</span>
+                <p>
+                    Of course that pre-compiled binary won't work if you're not running on Linux. If you want to try this on another platform or want to build <code>libsam</code> yourself for another reason, I've included more information in <a href="https://github.com/hannobraun/embedded/commit/f8fdd5d509105cb33099e96f0eb0c5a6c07fb2ec">the commit that added the library</a>.
+                </p>
+
+                <a name="note-4"></a>
+                <span class="footnote-number">[4]</span>
+                <p>
+                    If you just can't wait for my next article, you can learn everything you need to know about the watchdog in chapter 15 of the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>.
+                </p>
+            </footer>
+
+            <hr />
+        </main>
+
+        <footer>
+            <p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+        </footer>
+    </body>
+</html>

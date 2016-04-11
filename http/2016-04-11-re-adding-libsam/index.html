@@ -12,11 +12,11 @@
             <h1>Re-Adding libsam</h1>
 
             <p>
-                If you've followed this blog from the beginning, you'll know that I started out with a pretty standard Arduino sketch, and reduced it piece by piece, until I arrived at a minimal Rust program. This was an awesome approach. It allowed me to verify every small step before moving on to the next one. Writing a working Rust program from scratch would have been infinitely harder.
+                If you've followed this blog <a href="/2015-04-10-hello-world">from the beginning</a>, you'll know that I started out with a pretty standard Arduino sketch, and reduced it piece by piece, until I arrived at a <a href="/2015-05-08-translating-the-program-to-rust">Rust program</a>. This was an awesome approach. It allowed me to verify every small step before moving on to the next one. Writing a working Rust program from scratch would have been infinitely harder.
             </p>
 
             <p>
-                However, since I've finished the minimal Rust program and started adding features to it, I could no longer take advantage of working code when building those new features. Sometimes the feature was simple and this didn't really matter. Other times it caused me some problems, especially given the very limited debugging capabilities I have right now (all I can do to transmit information from the program to myself is blink the LED in various patterns)<a class="footnote" href="#note-1">[1]</a>.
+                However, since I've finished the minimal Rust program and started adding features to it, I could no longer take advantage of working code when building those new features. Sometimes the feature was simple and this didn't really matter. Other times it caused me problems, especially given the very limited debugging capabilities I have right now (all I can do to transmit information from the program to myself is blink the LED in various patterns)<a class="footnote" href="#note-1">[1]</a>.
             </p>
 
             <p>
@@ -24,7 +24,7 @@
             </p>
 
             <p>
-                After looking around for a while, I decided to use a library called <code>libsam</code> that I found in the <a href="https://github.com/arduino/Arduino">Arduino repository</a><a class="footnote" href="#note-2">[2]</a>. It seems straight-forward, and it's used by the Arduino code, so at least I know it works.
+                After looking around for a while, I decided to use a library by Atmel called <code>libsam</code> that I found in the <a href="https://github.com/arduino/Arduino/tree/master/hardware/arduino/sam/system/libsam">Arduino repository</a><a class="footnote" href="#note-2">[2]</a>. It seems straight-forward, and it's used by the Arduino code, so at least I know it works.
             </p>
 
             <p>

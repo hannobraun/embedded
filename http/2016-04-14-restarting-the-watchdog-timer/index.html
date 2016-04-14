@@ -13,7 +13,7 @@
 
 
             <p>
-                In the <a href="/2016-04-11-re-adding-libsam">previous article</a>, I first mentioned the watchdog, without explaining what it actually is and how it works. This week, I'm going to change that, and also show you how to restart the watchdog timer using Rust code.
+                In the <a href="/2016-04-11-re-adding-libsam">previous article</a>, I first mentioned the watchdog, without explaining what it actually is and how it works. This week I'm going to change that, and also show you how to restart the watchdog timer using Rust code.
             </p>
 
             <p>
@@ -41,7 +41,7 @@ pub const WDT: *mut Wdt = 0x400E1A50 as *mut Wdt;
             </pre>
 
             <p>
-                As microcontroller features go, the watchdog is one of the simpler ones. There are just 3 registers to control it (the fields in the struct), and one instance of those registers at address <code>0x400E1A50</code> (the constant).<a class="footnote" href="#note-2">[2]</a><a class="footnote" href="#note-3">[3]</a>
+                As microcontroller features go, the watchdog is one of the simpler ones. The user interface consists of 3 registers (the struct), and there's just one instance of the user interface at address <code>0x400E1A50</code> (the constant).<a class="footnote" href="#note-2">[2]</a><a class="footnote" href="#note-3">[3]</a>
             </p>
 
             <p>
@@ -49,7 +49,7 @@ pub const WDT: *mut Wdt = 0x400E1A50 as *mut Wdt;
             </p>
 
             <p>
-                Normally when designing a program, you would figure out what kind of delay is acceptable, if the program stops working, and set the divider value appropriately. The watchdog also has additional configuration that can protect about it from being reset in an endless loop by a program that no longer does anything useful. In our case, we're just blinking an LED though, so we don't care about any of that. All we need is a function to restart the timer. This is it:
+                Normally when designing a program, you would figure out what kind of delay is acceptable when the program stops working and set the divider value appropriately. The watchdog also has additional configuration that can protect it from being reset in an endless loop by a program that no longer does anything useful. In our case, we're just blinking an LED though, so we don't care about any of that. All we need is a function to restart the timer. This is it:
             </p>
 
             <pre>
@@ -61,7 +61,7 @@ pub fn restart_watchdog() {
             </pre>
 
             <p>
-                That's really it. All we need to do is to write a single value into the control register. The upper byte is a key that always needs to be <code>0xA5</code>. I'm not 100% sure what purpose it serves, but I'm assuming it's designed to prevent a faulty program that overwrites random memory by restarting the timer by accident. The only other significant bit in that value is the lowest one. When it's value is written as <code>1</code>, it restarts the timer.<a class="footnote" href="#note-5">[5]</a>
+                That's really it. All we need to do is to write a single value into the control register. The upper byte is a key that always needs to be <code>0xA5</code>. I'm not 100% sure what its purpose is, but I'm assuming it's designed to prevent a faulty program that overwrites random memory from restarting the timer by accident. The only other significant bit in that value is the last one. When it's value is written as <code>1</code>, it restarts the timer.<a class="footnote" href="#note-5">[5]</a>
             </p>
 
             <p>
@@ -74,12 +74,12 @@ pub fn restart_watchdog() {
 loop {
     restart_watchdog();
 
-    // LED blinking code omitted, too
+    // LED blinking code also omitted
 }
             </pre>
 
             <p>
-                By calling the function at the start of the loop, we make sure to restart it often enough to prevent the watchdog from ever resetting the microcontroller.
+                By restarting the watchdog at the start of the loop, we make sure to do it often enough to prevent the it from ever resetting the microcontroller.
             </p>
 
             <p>

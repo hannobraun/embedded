@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>embedded.hannobraun.de</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+    </head>
+
+    <body>
+        <main>
+            <p class="date">2016-04-14</p>
+            <h1>Restarting the Watchdog Timer</h1>
+
+
+            <p>
+                In the <a href="/2016-04-11-re-adding-libsam">previous article</a>, I first mentioned the watchdog, without explaining what it actually is and how it works. This week, I'm going to change that, and also show you how to restart the watchdog timer using Rust code.
+            </p>
+
+            <p>
+                So what is the watchdog? The watchdog timer (WDT) is a feature of the microcontroller that prevents a deadlock in the program from locking up the whole system.<a class="footnote" href="#note-1">[1]</a> It does so by counting down the timer. Once the timer reaches zero, the watchdog resets the microcontroller. A program that is working correctly can just regularly restart the watchdog timer to prevent that. If it stops working for some reason it will, in theory, also stop restarting the timer, which will trigger a system reset.
+            </p>
+
+            <p>
+                So why is that important for our little LED blinking program? Well, by default, the watchdog is enabled and will reset the hardware whenever the timer reaches zero. As the watchdog timer and the LED blinking pattern aren't perfectly aligned, you will notice a much shorter pause between the 16th and 17th blinking of the LED. This is because the program is restarted directly after the 16th blinking, and what we might think of as the 17th blinking is actually the first, after the reset.
+            </p>
+
+            <p>
+                Ok then, it's time to get into the implementation. Let's start with the low-level interface. Here's the definition of the watchdog's user interface:
+            </p>
+
+            <pre>
+#[repr(C)]
+pub struct Wdt {
+    pub control: Volatile&lt;u32&gt;,
+    pub mode   : Volatile&lt;u32&gt;,
+    pub status : Volatile&lt;u32&gt;,
+}
+
+
+pub const WDT: *mut Wdt = 0x400E1A50 as *mut Wdt;
+            </pre>
+
+            <p>
+                As microcontroller features go, the watchdog is one of the simpler ones. There are just 3 registers to control it (the fields in the struct), and one instance of those registers at address <code>0x400E1A50</code> (the constant).<a class="footnote" href="#note-2">[2]</a><a class="footnote" href="#note-3">[3]</a>
+            </p>
+
+            <p>
+                We're not even going to use all of that though. By default, the watchdog is configured to reset every 16 seconds. The timer uses a 12-bit counter, which is initialized at its maximum value (4096). The counter is counted down by the slow clock (SLCK), which runs at 32768 Hz, but is divided by a configurable divider value of 128. This comes down to a reset every 16 seconds (4096 / 32768 * 128).<a class="footnote" href="#note-4">[4]</a>
+            </p>
+
+            <p>
+                Normally when designing a program, you would figure out what kind of delay is acceptable, if the program stops working, and set the divider value appropriately. The watchdog also has additional configuration that can protect about it from being reset in an endless loop by a program that no longer does anything useful. In our case, we're just blinking an LED though, so we don't care about any of that. All we need is a function to restart the timer. This is it:
+            </p>
+
+            <pre>
+pub fn restart_watchdog() {
+    unsafe {
+        (*WDT).control.write(0xA5000001);
+    }
+}
+            </pre>
+
+            <p>
+                That's really it. All we need to do is to write a single value into the control register. The upper byte is a key that always needs to be <code>0xA5</code>. I'm not 100% sure what purpose it serves, but I'm assuming it's designed to prevent a faulty program that overwrites random memory by restarting the timer by accident. The only other significant bit in that value is the lowest one. When it's value is written as <code>1</code>, it restarts the timer.<a class="footnote" href="#note-5">[5]</a>
+            </p>
+
+            <p>
+                Now all that's left to do is to call that function every once in a while:
+            </p>
+
+            <pre>
+// Initialization code omitted for brevity
+
+loop {
+    restart_watchdog();
+
+    // LED blinking code omitted, too
+}
+            </pre>
+
+            <p>
+                By calling the function at the start of the loop, we make sure to restart it often enough to prevent the watchdog from ever resetting the microcontroller.
+            </p>
+
+            <p>
+                And that wraps us up for today. As always, the full code is available <a href="https://github.com/hannobraun/embedded">on GitHub</a>. See you next time!
+            </p>
+
+            <hr />
+
+            <footer>
+                <a name="note-1"></a>
+                <span class="footnote-number">[1]</span>
+                <p>
+                    The watchdog timer is described in chapter 15 of the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>.
+                </p>
+
+                <a name="note-2"></a>
+                <span class="footnote-number">[2]</span>
+                <p>
+                    See chapter 15.5 in the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, for a description of the watchdog's user interface.
+                </p>
+
+                <a name="note-3"></a>
+                <span class="footnote-number">[3]</span>
+                <p>
+                    If you've been reading my articles in sequence, it should be clear to you how this stuff works in general. If not, please read <a href="/2015-05-17-cleaning-up-parallel-io">this older article that explains memory-mapped I/O</a>.
+                </p>
+
+                <a name="note-4"></a>
+                <span class="footnote-number">[4]</span>
+                <p>
+                    Chapter 15.4 in the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a> explains how the watchdog works.
+                </p>
+
+                <a name="note-5"></a>
+                <span class="footnote-number">[5]</span>
+                <p>
+                    See chapter 15.5.1 in the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a> for a description of the control register.
+                </p>
+            </footer>
+
+            <hr />
+        </main>
+
+        <footer>
+            <p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+        </footer>
+    </body>
+</html>

@@ -15,6 +15,7 @@ mod program;
 pub mod hardware {
     // Basic definition of the hardware's features
     pub mod base {
+        pub mod nvic;
         pub mod pio;
         pub mod rtt;
         pub mod wdt;

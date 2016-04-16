@@ -12,9 +12,14 @@ impl Timer {
     /// the configuration is hardcoded here, so multiple instances of Timer can
     /// coexist peacefully without confusing each other.
     pub fn new() -> Timer {
-        // Set the timer to a resolution of a millisecond
         unsafe {
-            (*RTT).mode.write(0x00000020)
+            // Set the timer to a resolution of a millisecond.
+            let prescaler_value = 0x00000020;
+
+            // Enable alarm interrupt.
+            let interrupt_mask = 0x00010000;
+
+            (*RTT).mode.write(interrupt_mask | prescaler_value)
         }
 
         Timer

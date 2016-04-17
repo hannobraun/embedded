@@ -1,6 +1,7 @@
 use core::num::Wrapping;
 
 use hardware::base::rtt::RTT;
+use hardware::safe::nvic::Nvic;
 
 
 pub struct Timer(());
@@ -17,7 +18,9 @@ impl Timer {
     ///
     /// Please make sure you only instantiate one timer per program, for that
     /// reason.
-    pub unsafe fn new() -> Timer {
+    pub unsafe fn new(nvic: &mut Nvic) -> Timer {
+        nvic.enable_rtt();
+
         // Set the timer to a resolution of a millisecond.
         let prescaler_value = 0x00000020;
 

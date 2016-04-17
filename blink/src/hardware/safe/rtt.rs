@@ -45,6 +45,22 @@ impl Timer {
         }
     }
 
+    /// Sets the alarm with the given delay.
+    ///
+    /// The alarm interrupt is enabled in `Timer::new`. This means that the
+    /// alarm will trigger an interrupt, if RTT interrupts are enabled in
+    /// general.
+    ///
+    /// Please note that this method is not completely precise, as the timer
+    /// resolution is 1024 Hz, not 1000 Hz. Please don't use it for serious
+    /// timekeeping.
+    pub fn set_alarm(&mut self, delay_ms: u32) {
+        let alarm_ms = Wrapping(self.value()) + Wrapping(delay_ms);
+        unsafe {
+            (*RTT).alarm.write(alarm_ms.0)
+        }
+    }
+
     /// Sleep for the given number of milliseconds.
     pub fn sleep_ms(&self, milliseconds: u32) {
         // TODO: Since the timer resolution is 1024 Hz and not 1000 Hz, this

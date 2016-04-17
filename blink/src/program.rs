@@ -8,14 +8,14 @@ pub fn start() {
     let mut nvic = unsafe { Nvic::new() };
     nvic.enable_rtt();
 
+    let timer = unsafe { Timer::new() };
+
     // Pin 27 of the PIOB parallel I/O controller corresponds to pin 13 on the
     // Arduino Due, which is the built-in LED (labelled "L").
     let led = unsafe { pio::b().pin_27() };
     let led = led
         .enable()
         .enable_output();
-
-    let timer = unsafe { Timer::new() };
 
     loop {
         restart_watchdog();

@@ -3,7 +3,7 @@ use core::num::Wrapping;
 use hardware::base::rtt::RTT;
 
 
-pub struct Timer;
+pub struct Timer(());
 
 impl Timer {
     /// Create an interface to the timer hardware.
@@ -26,7 +26,9 @@ impl Timer {
 
         (*RTT).mode.write(interrupt_mask | prescaler_value);
 
-        Timer
+        // `Timer` has a private unit (`()`) field, to make it impossible to
+        // create an instance, except by using this constructor.
+        Timer(())
     }
 
     pub fn value(&self) -> u32 {

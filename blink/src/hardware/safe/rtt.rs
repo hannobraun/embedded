@@ -7,20 +7,24 @@ pub struct Timer;
 
 impl Timer {
     /// Create an interface to the timer hardware.
-    /// In theory, this should be an unsafe operation, as creating multiple
-    /// interfaces to the same hardware will lead to confusion. In practice,
-    /// the configuration is hardcoded here, so multiple instances of Timer can
-    /// coexist peacefully without confusing each other.
-    pub fn new() -> Timer {
-        unsafe {
-            // Set the timer to a resolution of a millisecond.
-            let prescaler_value = 0x00000020;
+    ///
+    /// This constructor is marked unsafe, as it returns an instance that serves
+    /// as an interface to something fundamentally global. If this constructor
+    /// were to be called in multiple places at the code, there would be
+    /// multiple `Timer` instances, all interfacing to the same global RTT
+    /// hardware. The different instances could interfere, for example when
+    /// setting alarms.
+    ///
+    /// Please make sure you only instantiate one timer per program, for that
+    /// reason.
+    pub unsafe fn new() -> Timer {
+        // Set the timer to a resolution of a millisecond.
+        let prescaler_value = 0x00000020;
 
-            // Enable alarm interrupt.
-            let interrupt_mask = 0x00010000;
+        // Enable alarm interrupt.
+        let interrupt_mask = 0x00010000;
 
-            (*RTT).mode.write(interrupt_mask | prescaler_value);
-        }
+        (*RTT).mode.write(interrupt_mask | prescaler_value);
 
         Timer
     }

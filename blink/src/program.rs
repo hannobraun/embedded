@@ -11,7 +11,7 @@ pub fn start() {
         .enable()
         .enable_output();
 
-    let timer = Timer::new();
+    let timer = unsafe { Timer::new() };
 
     loop {
         restart_watchdog();

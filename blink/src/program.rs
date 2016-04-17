@@ -5,9 +5,8 @@ use hardware::safe::wdt::restart_watchdog;
 
 
 pub fn start() {
-    let mut nvic = unsafe { Nvic::new() };
-
-    let timer = unsafe { Timer::new(&mut nvic) };
+    let mut nvic  = unsafe { Nvic::new() };
+    let     timer = unsafe { Timer::new(&mut nvic) };
 
     // Pin 27 of the PIOB parallel I/O controller corresponds to pin 13 on the
     // Arduino Due, which is the built-in LED (labelled "L").

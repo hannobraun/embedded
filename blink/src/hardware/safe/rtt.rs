@@ -19,7 +19,7 @@ impl Timer {
             // Enable alarm interrupt.
             let interrupt_mask = 0x00010000;
 
-            (*RTT).mode.write(interrupt_mask | prescaler_value)
+            (*RTT).mode.write(interrupt_mask | prescaler_value);
         }
 
         Timer

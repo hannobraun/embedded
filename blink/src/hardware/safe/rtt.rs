@@ -18,9 +18,7 @@ impl Timer {
     ///
     /// Please make sure you only instantiate one timer per program, for that
     /// reason.
-    pub unsafe fn new(nvic: &mut Nvic) -> Timer {
-        nvic.enable_rtt();
-
+    pub unsafe fn new() -> Timer {
         // `Timer` has a private unit (`()`) field, to make it impossible to
         // create an instance, except by using this constructor.
         Timer(())
@@ -63,12 +61,14 @@ impl Timer {
     }
 
     /// Sleep for the given number of milliseconds.
-    pub fn sleep_ms(&self, milliseconds: u32) {
+    pub fn sleep_ms(&self, milliseconds: u32, nvic: &mut Nvic) {
         let prescaler_value = 0x00000020; // millisecond resolution (roughly)
         let interrupt_mask  = 0x00010000; // enable alarm interrupt
         unsafe {
             (*RTT).mode.write(interrupt_mask | prescaler_value);
         }
+
+        nvic.enable_rtt();
 
         // TODO: Since the timer resolution is 1024 Hz and not 1000 Hz, this
         //       function is not completely precise. Please don't use it for

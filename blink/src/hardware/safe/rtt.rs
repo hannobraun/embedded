@@ -64,12 +64,8 @@ impl Timer {
 
     /// Sleep for the given number of milliseconds.
     pub fn sleep_ms(&self, milliseconds: u32) {
-        // Set the timer to a resolution of a millisecond.
-        let prescaler_value = 0x00000020;
-
-        // Enable alarm interrupt.
-        let interrupt_mask = 0x00010000;
-
+        let prescaler_value = 0x00000020; // millisecond resolution (roughly)
+        let interrupt_mask  = 0x00010000; // enable alarm interrupt
         unsafe {
             (*RTT).mode.write(interrupt_mask | prescaler_value);
         }

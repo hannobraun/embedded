@@ -70,8 +70,19 @@ impl Timer {
     pub fn sleep_ms(&self, milliseconds: u32, nvic: &mut Nvic) {
         let prescaler_value = 0x00000020; // millisecond resolution (roughly)
         let interrupt_mask  = 0x00010000; // enable alarm interrupt
+        let reset_timer_bit = 0x00040000;
         unsafe {
-            (*RTT).mode.write(interrupt_mask | prescaler_value);
+            (*RTT).mode.write(
+                reset_timer_bit | interrupt_mask | prescaler_value
+            );
+
+            // The reset is only effective after two slow clock cycles. Let's
+            // just wait until that has happened.
+            // See data sheet, section 13.4.
+            // TASK: Interrupts should really be disabled while we're doing
+            //       this. Otherwise we might miss the point at which the value
+            //       is zero.
+            while self.value() != 0 {}
         }
 
         nvic.enable_rtt();

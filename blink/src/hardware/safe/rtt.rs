@@ -21,14 +21,6 @@ impl Timer {
     pub unsafe fn new(nvic: &mut Nvic) -> Timer {
         nvic.enable_rtt();
 
-        // Set the timer to a resolution of a millisecond.
-        let prescaler_value = 0x00000020;
-
-        // Enable alarm interrupt.
-        let interrupt_mask = 0x00010000;
-
-        (*RTT).mode.write(interrupt_mask | prescaler_value);
-
         // `Timer` has a private unit (`()`) field, to make it impossible to
         // create an instance, except by using this constructor.
         Timer(())
@@ -72,6 +64,16 @@ impl Timer {
 
     /// Sleep for the given number of milliseconds.
     pub fn sleep_ms(&self, milliseconds: u32) {
+        // Set the timer to a resolution of a millisecond.
+        let prescaler_value = 0x00000020;
+
+        // Enable alarm interrupt.
+        let interrupt_mask = 0x00010000;
+
+        unsafe {
+            (*RTT).mode.write(interrupt_mask | prescaler_value);
+        }
+
         // TODO: Since the timer resolution is 1024 Hz and not 1000 Hz, this
         //       function is not completely precise. Please don't use it for
         //       serious timekeeping.

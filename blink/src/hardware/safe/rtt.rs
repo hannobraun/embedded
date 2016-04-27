@@ -5,23 +5,6 @@ use hardware::safe::nvic::Nvic;
 pub struct Timer(());
 
 impl Timer {
-    /// Create an interface to the timer hardware.
-    ///
-    /// This constructor is marked unsafe, as it returns an instance that serves
-    /// as an interface to something fundamentally global. If this constructor
-    /// were to be called in multiple places at the code, there would be
-    /// multiple `Timer` instances, all interfacing to the same global RTT
-    /// hardware. The different instances could interfere, for example when
-    /// setting alarms.
-    ///
-    /// Please make sure you only instantiate one timer per program, for that
-    /// reason.
-    pub unsafe fn new() -> Timer {
-        // `Timer` has a private unit (`()`) field, to make it impossible to
-        // create an instance, except by using this constructor.
-        Timer(())
-    }
-
     /// Sleep for a period of time roughly corresponding to the given number
     /// of milliseconds.
     ///

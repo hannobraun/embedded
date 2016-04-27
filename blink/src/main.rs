@@ -139,7 +139,7 @@ pub static VECTOR_TABLE: VectorTable = VectorTable {
     on_irq0 : abort,
     on_irq1 : abort,
     on_irq2 : abort,
-    on_irq3 : abort,
+    on_irq3 : handle_rtt,
     on_irq4 : abort,
     on_irq5 : abort,
     on_irq6 : abort,
@@ -210,4 +210,16 @@ fn on_reset() {
 // Used as a handler function for all interrupts we don't want to handle yet.
 fn abort() {
     panic!("Unhandled interrupt");
+}
+
+fn handle_rtt() {
+    use hardware::base::rtt::RTT;
+
+    // I don't know why, but unless we explicitely disable it, the alarm
+    // interrupt just keeps repeating, blocking the whole program.
+    let alarm_interrupt_bit = 0x00010000;
+    unsafe {
+        let mode = (*RTT).mode.read();
+        (*RTT).mode.write(mode & !alarm_interrupt_bit);
+    }
 }

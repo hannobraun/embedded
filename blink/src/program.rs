@@ -1,6 +1,6 @@
 use hardware::safe::nvic::Nvic;
 use hardware::safe::pio;
-use hardware::safe::rtt::Timer;
+use hardware::safe::rtt::sleep_ms;
 use hardware::safe::wdt::restart_watchdog;
 
 
@@ -18,8 +18,8 @@ pub fn start() {
         restart_watchdog();
 
         led.set_output();
-        Timer::sleep_ms(200, &mut nvic);
+        sleep_ms(200, &mut nvic);
         led.clear_output();
-        Timer::sleep_ms(800, &mut nvic);
+        sleep_ms(800, &mut nvic);
     }
 }

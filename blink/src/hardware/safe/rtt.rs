@@ -1,5 +1,3 @@
-use core::num::Wrapping;
-
 use hardware::base::rtt::RTT;
 use hardware::safe::nvic::Nvic;
 
@@ -22,42 +20,6 @@ impl Timer {
         // `Timer` has a private unit (`()`) field, to make it impossible to
         // create an instance, except by using this constructor.
         Timer(())
-    }
-
-    pub fn value(&self) -> u32 {
-        // This way of reading the timer value may not be accurate.  According
-        // to section 13.4 of the data sheet:
-        // "As this value can be updated asynchronously from the Master Clock,
-        //  it is advisable to read this register twice at the same value to
-        // improve accuracy of the returned value."
-        //
-        // I'm not sure what that actually means. Can the value be updated in
-        // the background, so that only some bits have changed? In that case
-        // it might make some sense to read twice, to make sure the update has
-        // finished.
-        // I don't really buy that though. I'm guessing that writing the value
-        // is atomic and I can't really read some in-between state. In that
-        // case, reading twice doesn't make any sense and I don't really
-        // understand what that comment from the data sheet means.
-        unsafe {
-            (*RTT).value.read()
-        }
-    }
-
-    /// Sets the alarm with the given delay.
-    ///
-    /// The alarm interrupt is enabled in `Timer::new`. This means that the
-    /// alarm will trigger an interrupt, if RTT interrupts are enabled in
-    /// general.
-    ///
-    /// Please note that this method is not completely precise, as the timer
-    /// resolution is 1024 Hz, not 1000 Hz. Please don't use it for serious
-    /// timekeeping.
-    pub fn set_alarm(&mut self, delay_ms: u32) {
-        let alarm_ms = Wrapping(self.value()) + Wrapping(delay_ms);
-        unsafe {
-            (*RTT).alarm.write(alarm_ms.0)
-        }
     }
 
     /// Sleep for a period of time roughly corresponding to the given number

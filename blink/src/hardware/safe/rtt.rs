@@ -88,12 +88,17 @@ impl Timer {
             //       this. Otherwise we might miss the point at which the value
             //       is zero.
             while self.value() != 0 {}
+
+            (*RTT).alarm.write(milliseconds);
         }
 
         nvic.enable_rtt();
 
         // TODO: This function doesn't really sleep. Rather, it waits busily,
         //       wasting a lot of resources.
-        while self.value() < milliseconds {}
+        let alarm_status_bit = 0x00000001;
+        unsafe {
+            while (*RTT).status.read() & alarm_status_bit == 0 {}
+        }
     }
 }

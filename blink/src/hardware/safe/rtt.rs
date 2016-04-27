@@ -34,7 +34,7 @@ impl Timer {
     /// of the current program, but it might be nicer to reset everything to
     /// the previous value, if this were used in a larger program where other
     /// parts of the code might also sleep.
-    pub fn sleep_ms(&self, milliseconds: u32, nvic: &mut Nvic) {
+    pub fn sleep_ms(milliseconds: u32, nvic: &mut Nvic) {
         let prescaler_value = 0x00000020; // millisecond resolution (roughly)
         let interrupt_mask  = 0x00010000; // enable alarm interrupt
         let reset_timer_bit = 0x00040000;

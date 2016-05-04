@@ -7,7 +7,7 @@ use serial::prelude::*;
 
 
 fn main() {
-    let mut serial_port = open_serial_port("/dev/ttyACM0")
+    let mut serial_port = open_port("/dev/ttyACM0")
         .expect("Failed to open serial port");
 
     loop {
@@ -20,7 +20,7 @@ fn main() {
 }
 
 
-fn open_serial_port(path: &str) -> serial::Result<serial::SystemPort> {
+fn open_port(path: &str) -> serial::Result<serial::SystemPort> {
     let mut port = try!(serial::open(path));
 
     try!(port.reconfigure(&|settings| {

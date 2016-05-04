@@ -7,7 +7,9 @@ use serial::prelude::*;
 
 
 fn main() {
-    let mut serial_port = open_port("/dev/ttyACM0")
+    let path = "/dev/ttyACM0";
+
+    let mut serial_port = open_port(path)
         .expect("Failed to open serial port");
 
     loop {

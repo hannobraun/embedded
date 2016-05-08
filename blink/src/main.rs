@@ -17,6 +17,7 @@ pub mod hardware {
     pub mod base {
         pub mod nvic;
         pub mod pio;
+        pub mod pmc;
         pub mod rtt;
         pub mod wdt;
     }

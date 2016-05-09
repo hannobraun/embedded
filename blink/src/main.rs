@@ -21,6 +21,7 @@ pub mod hardware {
         pub mod pio;
         pub mod pmc;
         pub mod rtt;
+        pub mod uart;
         pub mod wdt;
     }
 

@@ -50,5 +50,17 @@ pub const MODE_AUTOMATIC_ECHO : u32 = 0x1 << 14;
 pub const MODE_LOCAL_LOOPBACK : u32 = 0x2 << 14;
 pub const MODE_REMOTE_LOOPBACK: u32 = 0x3 << 14;
 
+// Status register bits. See data cheet, chapter 34.6.6.
+pub const RXRDY  : u32 = 0x1 << 0 ; // Receiver Ready
+pub const TXRDY  : u32 = 0x1 << 1 ; // Transmitter Ready
+pub const ENDRX  : u32 = 0x1 << 3 ; // End of Receiver Transfer
+pub const ENDTX  : u32 = 0x1 << 4 ; // End of Transmitter Transfer
+pub const OVRE   : u32 = 0x1 << 5 ; // Overrun Error
+pub const FRAME  : u32 = 0x1 << 6 ; // Framing Error
+pub const PARE   : u32 = 0x1 << 7 ; // Parity Error
+pub const TXEMPTY: u32 = 0x1 << 9 ; // Transmitter Empty
+pub const TXBUFE : u32 = 0x1 << 11; // Transmission Buffer Empty
+pub const RXBUFF : u32 = 0x1 << 12; // Receive Buffer Full
+
 
 pub const UART: *mut Uart = 0x400E0800 as *mut Uart;

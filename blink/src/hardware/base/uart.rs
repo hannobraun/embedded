@@ -35,7 +35,6 @@ pub const TXEN  : u32 = 0x1 << 6; // Transmitter Enable
 pub const TXDIS : u32 = 0x1 << 7; // Transmitter Disable
 pub const RSTSTA: u32 = 0x1 << 8; // Reset Status Bits
 
-
 // Parity configuration, to be written into the mode register. See data sheet,
 // chapter 34.6.2.
 pub const PARITY_EVEN : u32 = 0x0 << 9;
@@ -43,7 +42,6 @@ pub const PARITY_ODD  : u32 = 0x1 << 9;
 pub const PARITY_SPACE: u32 = 0x2 << 9; // parity forced to 0
 pub const PARITY_MARK : u32 = 0x3 << 9; // parity forced to 1
 pub const PARITY_NO   : u32 = 0x4 << 9;
-
 
 // UART modes, to be written into the mode register. See data sheet, chapter
 // 34.6.2.

@@ -1,4 +1,4 @@
-// Universal Asynchronous Receiver Transceiver code for Atmel SAM3X.
+// Universal Asynchronous Receiver/Transmitter code for Atmel SAM3X.
 // See data sheet, chapter 34.
 
 

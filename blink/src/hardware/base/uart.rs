@@ -26,6 +26,16 @@ pub struct Uart {
 }
 
 
+// Control register bits. See data sheet, chapter 34.6.1.
+pub const RSTRX : u32 = 0x1 << 2; // Reset Receiver
+pub const RSTTX : u32 = 0x1 << 3; // Reset Transmitter
+pub const RXEN  : u32 = 0x1 << 4; // Receiver Enable
+pub const RXDIS : u32 = 0x1 << 5; // Receiver Disable
+pub const TXEN  : u32 = 0x1 << 6; // Transmitter Enable
+pub const TXDIS : u32 = 0x1 << 7; // Transmitter Disable
+pub const RSTSTA: u32 = 0x1 << 8; // Reset Status Bits
+
+
 // Parity configuration, to be written into the mode register. See data sheet,
 // chapter 34.6.2.
 pub const PARITY_EVEN : u32 = 0x0 << 9;

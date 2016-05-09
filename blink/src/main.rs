@@ -16,6 +16,7 @@ pub mod hardware {
     // Basic definition of the hardware's features
     pub mod base {
         pub mod nvic;
+        pub mod pdc;
         pub mod peripherals;
         pub mod pio;
         pub mod pmc;

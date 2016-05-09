@@ -26,6 +26,15 @@ pub struct Uart {
 }
 
 
+// Parity configuration, to be written into the mode register. See data sheet,
+// chapter 34.6.2.
+pub const PARITY_EVEN : u32 = 0x0 << 9;
+pub const PARITY_ODD  : u32 = 0x1 << 9;
+pub const PARITY_SPACE: u32 = 0x2 << 9; // parity forced to 0
+pub const PARITY_MARK : u32 = 0x3 << 9; // parity forced to 1
+pub const PARITY_NO   : u32 = 0x4 << 9;
+
+
 // UART modes, to be written into the mode register. See data sheet, chapter
 // 34.6.2.
 pub const MODE_NORMAL         : u32 = 0x0 << 14;

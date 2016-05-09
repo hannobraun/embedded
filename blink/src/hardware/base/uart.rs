@@ -26,4 +26,12 @@ pub struct Uart {
 }
 
 
+// UART modes, to be written into the mode register. See data sheet, chapter
+// 34.6.2.
+pub const MODE_NORMAL         : u32 = 0x0 << 14;
+pub const MODE_AUTOMATIC_ECHO : u32 = 0x1 << 14;
+pub const MODE_LOCAL_LOOPBACK : u32 = 0x2 << 14;
+pub const MODE_REMOTE_LOOPBACK: u32 = 0x3 << 14;
+
+
 pub const UART: *mut Uart = 0x400E0800 as *mut Uart;

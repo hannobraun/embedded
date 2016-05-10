@@ -43,13 +43,12 @@ fn main() {
 fn open_port(path: &str) -> serial::Result<serial::SystemPort> {
     let mut port = try!(serial::open(path));
 
-    try!(port.reconfigure(&|settings| {
-        try!(settings.set_baud_rate(serial::Baud9600));
-        settings.set_char_size(serial::Bits8);
-        settings.set_parity(serial::ParityNone);
-        settings.set_stop_bits(serial::Stop1);
-
-        Ok(())
+    try!(port.configure(&serial::PortSettings {
+        baud_rate   : serial::Baud9600,
+        char_size   : serial::Bits8,
+        parity      : serial::ParityNone,
+        stop_bits   : serial::Stop1,
+        flow_control: serial::FlowNone,
     }));
 
     Ok(port)

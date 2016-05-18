@@ -66,4 +66,7 @@ pub struct Pmc {
 }
 
 
+pub const SLOW_CLOCK_FREQUENCY_HZ: u32 = 32_768;
+
+
 pub const PMC: *mut Pmc = 0x400E0600 as *mut Pmc;

@@ -24,7 +24,7 @@ fn main() {
     loop {
         if let Err(error) = io::copy(&mut serial_port, &mut io::stdout()) {
             if error.kind() != io::ErrorKind::TimedOut {
-                panic!("Failed to print serial output: {}");
+                panic!("Failed to print serial output: {}", error);
             }
         }
         if let Err(error) = io::stdout().flush() {

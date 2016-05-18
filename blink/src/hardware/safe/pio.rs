@@ -109,6 +109,13 @@ impl<Status, OutputStatus> Pin<Status, OutputStatus> {
             output_status: PhantomData,
         }
     }
+
+    pub fn disable(self) -> Pin<status::Disabled, output_status::Undefined> {
+        unsafe {
+            (*self.controller).pio_disable.write(self.mask);
+        }
+        Pin::new(self.mask, self.controller)
+    }
 }
 
 impl<OutputStatus> Pin<status::Undefined, OutputStatus> {
@@ -150,6 +157,7 @@ impl Pin<status::Enabled, output_status::Enabled> {
 
 pub mod status {
     pub struct Undefined;
+    pub struct Disabled;
     pub struct Enabled;
 }
 

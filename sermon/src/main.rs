@@ -27,6 +27,9 @@ fn main() {
                 panic!("Failed to print serial output: {}");
             }
         }
+        if let Err(error) = io::stdout().flush() {
+            panic!("Failed to flush stdout: {}", error);
+        }
 
         match input.try_recv() {
             Ok(input) =>

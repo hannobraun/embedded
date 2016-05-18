@@ -141,13 +141,13 @@ impl Pin<status::Enabled, output_status::Undefined> {
 }
 
 impl Pin<status::Enabled, output_status::Enabled> {
-    pub fn set_output(&self) {
+    pub fn set_output(&mut self) {
         unsafe {
             (*self.controller).set_output_data.write(self.mask)
         }
     }
 
-    pub fn clear_output(&self) {
+    pub fn clear_output(&mut self) {
         unsafe {
             (*self.controller).clear_output_data.write(self.mask)
         }

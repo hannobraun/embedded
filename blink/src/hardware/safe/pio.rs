@@ -116,6 +116,13 @@ impl<Status, OutputStatus> Pin<Status, OutputStatus> {
         }
         Pin::new(self.mask, self.controller)
     }
+
+    pub fn enable_pull_up(self) -> Pin<Status, OutputStatus> {
+        unsafe {
+            (*self.controller).pull_up_enable.write(self.mask);
+        }
+        self
+    }
 }
 
 impl<OutputStatus> Pin<status::Undefined, OutputStatus> {

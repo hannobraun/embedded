@@ -154,6 +154,18 @@ impl Pin<status::Enabled, output_status::Enabled> {
     }
 }
 
+impl<OutputStatus> Pin<status::Disabled, OutputStatus> {
+    pub fn select_peripheral_a(&mut self) {
+        unsafe {
+            let peripheral_select =
+                (*self.controller).peripheral_ab_select.read();
+            (*self.controller).peripheral_ab_select.write(
+                peripheral_select & !self.mask
+            );
+        }
+    }
+}
+
 
 pub mod status {
     pub struct Undefined;

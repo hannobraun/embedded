@@ -54,6 +54,12 @@ impl Uart {
         // here than pulling out my hair searching for problems later.
         pmc::enable_peripheral_clock_0(&Peripheral::Uart);
 
+        // Reset and disable UART, to put everything in a defined state. See
+        // data sheet, sections 34.5.2.1 and 34.6.1.
+        (*UART).control.write(
+            uart::RSTRX | uart::RSTTX | uart::RXDIS | uart::TXDIS
+        );
+
         // Configure UART baud rate. See data sheet, sections 34.5.1 and
         // 34.6.9.
         const BAUD_RATE: u32 = 9600;

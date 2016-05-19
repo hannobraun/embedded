@@ -56,6 +56,11 @@ impl Uart {
 
         // Reset and disable UART, to put everything in a defined state. See
         // data sheet, sections 34.5.2.1 and 34.6.1.
+        // If I'm reading the data sheet correctly, resetting would already be
+        // enough, so there's probably no need to disable in addition to that.
+        // The official code by Atmel (in ASF, for example) does it like this,
+        // however, and since I can't be sure that it never makes a
+        // difference, I opted to be safe and just do it.
         (*UART).control.write(
             uart::RSTRX | uart::RSTTX | uart::RXDIS | uart::TXDIS
         );

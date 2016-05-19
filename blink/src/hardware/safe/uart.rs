@@ -100,7 +100,28 @@ impl fmt::Write for Uart {
             while (*UART).status.read() & uart::TXEMPTY == 0 {}
         }
 
-        // TASK: Check for UART errors
+        let mut error_occured = false;
+        unsafe {
+            if (*UART).status.read() & uart::OVRE != 0 {
+                error_occured = true;
+            }
+            if (*UART).status.read() & uart::FRAME != 0 {
+                error_occured = true;
+            }
+            if (*UART).status.read() & uart::PARE != 0 {
+                error_occured = true;
+            }
+
+            // Reset error flags, since we already read them.
+            (*UART).control.write(uart::RSTSTA);
+        }
+
+        if error_occured {
+            // It would be nice to define an error enum and make it available
+            // for later inspection.
+            return Err(fmt::Error)
+        }
+
         Ok(())
     }
 }

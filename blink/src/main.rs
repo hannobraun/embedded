@@ -30,6 +30,7 @@ pub mod hardware {
         pub mod nvic;
         pub mod peripherals;
         pub mod pio;
+        pub mod pmc;
         pub mod rtt;
         pub mod wdt;
     }

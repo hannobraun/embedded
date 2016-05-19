@@ -71,4 +71,19 @@ impl Uart {
             _tx_pin: tx_pin,
         }
     }
+
+    pub fn send(&mut self, data: u8) {
+        unsafe {
+            // Wait until transmitter is ready. See data sheet, sections
+            // 34.5.3.3 and 34.6.6.
+            while (*UART).status.read() & uart::TXRDY == 0 {}
+
+            // Send character. See data sheet, sections 34.5.3.3 and 34.6.8.
+            (*UART).transmit_holding.write(data as u32);
+
+            // Wait until character has been sent. See data sheet, sections
+            // 34.5.3.3 and 34.6.6.
+            while (*UART).status.read() & uart::TXEMPTY == 0 {}
+        }
+    }
 }

@@ -21,9 +21,9 @@ pub fn start() {
     let mut uart    = unsafe { Uart::new(uart_tx) };
 
     loop {
-        // Ignore logging errors. If there are any, it's not worth killing the
-        // program over the debug output. It would be nicer to safe them and
-        // report them later, however.
+        // Ignore logging errors. It's not worth killing the program because of
+        // failed debug output. It would be nicer to safe and report them
+        // later, however.
         let _ = write!(uart, "Start main loop iteration\n");
 
         restart_watchdog();

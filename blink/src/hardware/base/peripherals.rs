@@ -10,7 +10,7 @@ pub const WDT       : u32 = 4 ; // Watchdog Timer
 pub const PMC       : u32 = 5 ; // Power Management Controller
 pub const EEFC0     : u32 = 6 ; // Enhanced Embedded Flash Controller 0
 pub const EEFC1     : u32 = 7 ; // Enhanced Embedded Flash Controller 1
-pub const UART      : u32 = 8 ; // Universal Asynchronous Receiver Transceiver
+pub const UART      : u32 = 8 ; // Universal Asynchronous Receiver Transmitter
 pub const SMC_SDRAMC: u32 = 9 ; // Static Memory Controller / Synchronous
                                 // Dynamic RAM Controller
 pub const SDRAMC    : u32 = 10; // Synchronous Dynamic RAM Controller

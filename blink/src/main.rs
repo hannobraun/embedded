@@ -28,6 +28,7 @@ pub mod hardware {
     // Safe API to the hardware's features
     pub mod safe {
         pub mod nvic;
+        pub mod peripherals;
         pub mod pio;
         pub mod rtt;
         pub mod wdt;

@@ -68,5 +68,10 @@ pub struct Pmc {
 
 pub const SLOW_CLOCK_FREQUENCY_HZ: u32 = 32_768;
 
+// Constants for Clock Generator Main Clock Frequency Register. See data sheet,
+// section 28.15.9.
+pub const MAINFRDY  : u32 = 0x00010000;
+pub const MAINF_MASK: u32 = 0x0000ffff;
+
 
 pub const PMC: *mut Pmc = 0x400E0600 as *mut Pmc;

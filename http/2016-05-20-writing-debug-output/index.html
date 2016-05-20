@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>embedded.hannobraun.de</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+    </head>
+
+    <body>
+        <main>
+            <p class="date">2016-05-20</p>
+            <h1>Writing Debug Output</h1>
+
+            <p>
+                For a while, as I've been working with more complex hardware features, I've been having problems getting my code to work. Working with Rust, I don't have a lot of other embedded code to look at<a class="footnote" href="#note-1">[1]</a> and, except a single blinking LED, I haven't had any ways of communicating the program's state back to me. I've <a href="/2016-04-11-re-adding-libsam">made some steps</a> to ease the difficulty of developing new features, but it hasn't nearly been enough. It's time for the big guns: Writing debug output that shows up on my computer.
+            </p>
+
+            <p>
+                There are several ways for the microcontroller to send messages to the outside world, but since it connects to my office computer via USB, that limits the options. The SAM3X8E has native support for USB<a class="footnote" href="#note-2">[2]</a>, but it's been very difficult to wrap my had around it, and was exactly the kind of complex feature I need debug support for in the first place.
+            </p>
+
+            <p>
+                Fortunately there's another option: The Arduino Due actually contains a second microcontroller that connects to the SAM3X8E's <a href="https://en.wikipedia.org/wiki/Universal_asynchronous_receiver/transmitter">UART</a> pins and connects one of the board's USB ports on the other side. From the program's side, UART is a lot simpler to handle than USB, so this seemed to be a much better approach to get some debugging capability.<a class="footnote" href="#note-3">[3]</a>
+            </p>
+
+            <p>
+                To get started with UART, we first need to configure the pins it is going to use. There are two pins total, one for receiving and one for sending. For the moment, we're only going to send, so I'm mostly ignoring the receiving pin. I've talked about <a href="/2015-05-17-cleaning-up-parallel-io">parallel I/O</a> before. It can be used to controll all the I/O pins directly, but in this case, we want the UART peripheral to control the pin for us. Here's how we configure the pin to do that:
+            </p>
+
+            <pre>
+let tx_pin = unsafe { pio::a().pin_9() };
+let mut tx_pin = tx_pin
+    .disable()
+    .enable_pull_up();
+
+tx_pin.select_peripheral_a();
+            </pre>
+
+            <p>
+                A few things happen here:
+            </p>
+
+            <ol>
+                <li>
+                    The pin used by UART for sending is pin 9 of Parallel I/O Controller A. We get a handle to that.<a class="footnote" href="#note-4">[4]</a>
+                </li>
+                <li>
+                    By disabling the pin, we tell the Parallel I/O Controller that it shouldn't worry about it. In effect, this gives full control to whatever peripheral the pin is assigned to.<a class="footnote" href="#note-5">[5]</a>
+                </li>
+                <li>
+                    Enabling the pull-up resistor ensures that the pin output is always in a defined state (high potential, to be specific).<a class="footnote" href="#note-6">[6]</a>
+                </li>
+                <li>
+                    Each pin can be assigned to up to two peripherals, so after
+                    telling the Parallel I/O Controller that it's not responsible, we need to select which other peripheral is responsible for that pin. In the case of this pin, UART is defined as peripheral A, so that's what we're selecting.<a class="footnote" href="#note-7">[7]</a>
+                </li>
+            </ol>
+
+            <p>
+                There are two things to take note of here:
+            </p>
+
+            <ol>
+                <li>
+                    As you might have noticed, I have added additional methods to the parallel I/O code to support all of this. Since there is nothing groundbreakingly new here, I'm not going to go into it right now. Please refer to the <a href="/2015-05-17-cleaning-up-parallel-io">previous article about parallel I/O</a> or check out the <a href="https://github.com/hannobraun/embedded/blob/c1e75bf6aecc89be275de276ed9e29aa22fb7de3/blink/src/hardware/safe/pio.rs">full code on GitHub</a>.
+                </li>
+                <li>
+                    None of this is strictly necessary in the context of our program. Pins are disbled by default, pull-ups are enabled by default and peripheral A is selected by default. However, we might move the code around later, so putting everything in a defined state is more robust.
+                </li>
+            </ol>
+
+            <p>
+                Now that the I/O pin is set up, we can get started with UART itself. Before doing anything with it, let's put in a defined state, in case it has been used before:
+            </p>
+
+            <pre>
+(*UART).control.write(
+    uart::RSTRX | uart::RSTTX | uart::RXDIS | uart::TXDIS
+);
+            </pre>
+
+            <p>
+                Here we are writing the reset and disable bits for both the transmitter and receiver to UART's control register.<a class="footnote" href="#note-8">[8]</a><a class="footnote" href="#note-9">[9]</a> I believe this is total overkill, actually. If I'm reading the documentation correctly, just resetting should be enough, but all the example code I could find (for example in <a href="http://asf.atmel.com">ASF</a>) did it like this, so I decided to just roll with it instead of risking weird problems later.
+            </p>
+
+            <p>
+                Next up is setting the baud rate that our connection should run on. <a href="https://en.wikipedia.org/wiki/Baud">Baud</a> means symbol per second. I don't know if that's any different from bits per seconds in this case (I guess not?), but honestly, I don't care that much. The important thing is to set the baud rate to the same value at both ends of the connection. Here, I've opted for setting the baud rate 9600. A nice, low value that is none the less fast enough for our debug output.
+            </p>
+
+            <pre>
+const BAUD_RATE: u32 = 9600;
+let clock_divisor = pmc::main_clock_frequency_hz() / BAUD_RATE / 16;
+(*UART).baud_rate_generator.write(clock_divisor);
+            </pre>
+
+            <p>
+                The UART peripheral has a register that we need to write a specific divisor value into to set the baud rate. This value is dependent on the microcontroller's main clock frequency and can be computed as shown above.<a class="footnote" href="#note-10">[10]</a> Since the clock frequency depends on the microcontroller used and can even change during runtime according to settings, it would be unwise to just hardcode a frequency in the code. Instead we need be be a bit cleverer.
+            </p>
+
+            <p>
+                <a href="http://www.arm.com/products/processors/cortex-m/cortex-microcontroller-software-interface-standard.php">CMSIS</a>, as used in the <a href="https://github.com/arduino/Arduino">Arduino code</a>, actually maintains a variable that it changes whenever the processor clock configuration changes. That seems error-prone though. Fortunately, I've found a way to get the main clock frequency from the Power Management Controller dynamically:
+            </p>
+
+            <pre>
+pub fn main_clock_frequency_hz() -> u32 {
+    let main_clock_frequency_within_16_slow_clock_cycles = unsafe {
+        while (*PMC).main_clock_frequency.read() &amp; MAINFRDY == 0 {}
+        (*PMC).main_clock_frequency.read() &amp; MAINF_MASK
+    };
+
+    main_clock_frequency_within_16_slow_clock_cycles
+        * SLOW_CLOCK_FREQUENCY_HZ / 16
+}
+            </pre>
+
+            <p>
+                This code waits until the main clock frequency has stabilized (it might not be stable directly after changing it), then reads it from the register. The value read is not the actual frequency, but the number of cycles within 16 cycles of the slow clock.<a class="footnote" href="#note-11">[11]</a> The slow clock on the SAM3X8E is always at 32768 Hz.<a class="footnote" href="#note-12">[12]</a>
+            </p>
+
+            <p>
+                Some more configuration is necessary:
+            </p>
+
+            <pre>
+(*UART).mode.write(
+    uart::MODE_NORMAL | uart::PARITY_NO
+);
+            </pre>
+
+            <p>
+                This puts UART into normal mode (as opposed to one of the test modes) and configures it to not use a parity bit.<a class="footnote" href="#note-13">[13]</a>
+            </p>
+
+            <p>
+                The only thing left to do is enabling UART:<a class="footnote" href="#note-14">[14]</a>
+            </p>
+
+            <pre>
+(*UART).control.write(uart::RXEN | uart::TXEN);
+            </pre>
+
+            <p>
+                And that's it for the initialization. I've packaged all of that neatly in a struct for reasons that will soon become apparent:
+            </p>
+
+            <pre>
+pub type UndefinedPin   = Pin&lt;status::Undefined, output_status::Undefined&gt;;
+pub type InitializedPin = Pin&lt;status::Disabled , output_status::Undefined&gt;;
+
+
+pub struct Uart {
+    _tx_pin: InitializedPin,
+}
+
+impl Uart {
+    pub unsafe fn new(tx_pin: UndefinedPin) -> Self {
+        // Initialization code goes here.
+
+        Uart {
+            _tx_pin: tx_pin,
+        }
+    }
+}
+            </pre>
+
+            <p>
+                Now that we've initialized the UART peripheral, we actually want to write messages to it. However, we don't just want to implement any old method to do that. We want to hook this up with Rust's <a href="https://doc.rust-lang.org/nightly/core/fmt/index.html">formatting infrastructure</a>. This infrastructure lives in <a href="https://doc.rust-lang.org/nightly/core/">the core library</a>, which means it's directly available to us, no porting to be done!
+            </p>
+
+            <p>
+                All we need to do is implement the <code>fmt::Write</code> trait as shown here:
+            </p>
+
+            <pre>
+impl fmt::Write for Uart {
+    fn write_str(&amp;mut self, s: &amp;str) -> fmt::Result {
+        for &amp;b in s.as_bytes() {
+            unsafe {
+                while (*UART).status.read() &amp; uart::TXRDY == 0 {}
+                (*UART).transmit_holding.write(b as u32);
+            }
+        }
+
+        unsafe {
+            while (*UART).status.read() &amp; uart::TXEMPTY == 0 {}
+        }
+
+        // Error handling code omitted
+
+        Ok(())
+    }
+}
+            </pre>
+
+            <p>
+                For each byte of the given string, this method waits until the transmitter is ready, then writes the byte to the holding register. After all bytes have been written, it waits until they have been sent, then returns.<a class="footnote" href="#note-15">[15]</a>
+            </p>
+
+            <p>
+                All of this is very low-tech by design. If we were transferring large amounts of data, we could speed up the performance by writing into a buffer and using interrupts to tell us whenever another byte can be sent. This code is designed for debug output, however. We likely won't need to send a lot of data, and robustness is more important in this case than performance.
+            </p>
+
+            <p>
+                Now we can use Rust's infrastructure, like the <code>write!</code> macro, to print debug output. Here's how our program now looks, with debug output added:
+            </p>
+
+            <pre>
+// LED initialization goes here
+
+let     uart_tx = unsafe { pio::a().pin_9() };
+let mut uart    = unsafe { Uart::new(uart_tx) };
+
+loop {
+    // Ignore logging errors. It's not worth killing the program because of
+    // failed debug output. It would be nicer to save the error and report
+    // it later, however.
+    let _ = write!(uart, "Start main loop iteration\n");
+
+    // LED blinking and other stuff goes here
+}
+            </pre>
+
+            <p>
+                To receive the debug output on your computer, just use any serial monitor application. Be sure to set it to 8 data bits, no parity bit, and one stop bit. For my own use, I've opted to write a simple serial monitor that I've added <a href="https://github.com/hannobraun/embedded/tree/c1e75bf6aecc89be275de276ed9e29aa22fb7de3/sermon">to the repository</a>.
+            </p>
+
+            <p>
+                And that's it for today! As always, the full code is available <a href="https://github.com/hannobraun/embedded">on GitHub</a>. See you next time!
+            </p>
+
+            <hr />
+
+            <footer>
+                <a name="note-1"></a>
+                <span class="footnote-number">[1]</span>
+                <p>
+                    There is some, though. I've already mentioned <a href="http://zinc.rs">Zinc</a>, which has been the most helpful so far. Recently, I've also discovered <a href="https://github.com/japaric/cu">Copper</a>. There are other resources <a href="https://github.com/flosse/rust-os-comparison#embedded-systems">listed here</a>.
+                </p>
+
+                <a name="note-2"></a>
+                <span class="footnote-number">[2]</span>
+                <p>
+                    USB support is described in chapter 39 of the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>.
+                </p>
+
+                <a name="note-3"></a>
+                <span class="footnote-number">[3]</span>
+                <p>
+                    See chapter 34 of the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a> for a full description of UART.
+                </p>
+
+                <a name="note-4"></a>
+                <span class="footnote-number">[4]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, section 34.4.1.
+                </p>
+
+                <a name="note-5"></a>
+                <span class="footnote-number">[5]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, section 31.4.1.
+                </p>
+
+                <a name="note-6"></a>
+                <span class="footnote-number">[6]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, section 31.5.1.
+                </p>
+
+                <a name="note-7"></a>
+                <span class="footnote-number">[7]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, section 31.5.3. Section 9.3 contains a full list of how pins are assigned to peripherals.
+                </p>
+
+                <a name="note-8"></a>
+                <span class="footnote-number">[8]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, section 34.6.1.
+                </p>
+
+                <a name="note-9"></a>
+                <span class="footnote-number">[9]</span>
+                <p>
+                    I've written a low-level interface for accessing the UART peripheral, which you can see being used here. Since I've done this many times already, I'm not going to go into it here. The articles about <a href="/2015-05-17-cleaning-up-parallel-io">parallel I/O</a> and <a href="/2016-03-16-optimized-builds">optimized builds</a> should have all the details required.
+                </p>
+
+                <a name="note-10"></a>
+                <span class="footnote-number">[10]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, sections 34.5.1 and 34.6.9.
+                </p>
+
+                <a name="note-11"></a>
+                <span class="footnote-number">[11]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, section 28.15.9.
+                </p>
+
+                <a name="note-12"></a>
+                <span class="footnote-number">[12]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, section 27.4 for everything about the slow clock.
+                </p>
+
+                <a name="note-13"></a>
+                <span class="footnote-number">[13]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, section 34.6.2.
+                </p>
+
+                <a name="note-14"></a>
+                <span class="footnote-number">[14]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, section 34.6.1.
+                </p>
+
+                <a name="note-15"></a>
+                <span class="footnote-number">[15]</span>
+                <p>
+                    See <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, section 34.6.6.
+                </p>
+            </footer>
+
+            <hr />
+        </main>
+
+        <footer>
+            <p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+        </footer>
+    </body>
+</html>

@@ -22,8 +22,8 @@ pub fn start() {
 
     loop {
         // Ignore logging errors. It's not worth killing the program because of
-        // failed debug output. It would be nicer to save and report them
-        // later, however.
+        // failed debug output. It would be nicer to save the error and report
+        // it later, however.
         let _ = write!(uart, "Start main loop iteration\n");
 
         restart_watchdog();

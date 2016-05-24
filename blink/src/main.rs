@@ -10,6 +10,9 @@
 use core::ptr;
 
 
+#[macro_use]
+pub mod debug;
+
 mod program;
 
 pub mod hardware {

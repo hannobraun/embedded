@@ -1,9 +1,9 @@
 use core::fmt::Write;
 
+use debug;
 use hardware::safe::nvic::Nvic;
 use hardware::safe::pio;
 use hardware::safe::rtt::sleep_ms;
-use hardware::safe::uart::Uart;
 use hardware::safe::wdt::restart_watchdog;
 
 
@@ -17,14 +17,11 @@ pub fn start() {
         .enable()
         .enable_output();
 
-    let     uart_tx = unsafe { pio::a().pin_9() };
-    let mut uart    = unsafe { Uart::new(uart_tx) };
+    let uart_tx = unsafe { pio::a().pin_9() };
+    unsafe { debug::init(uart_tx) };
 
     loop {
-        // Ignore logging errors. It's not worth killing the program because of
-        // failed debug output. It would be nicer to save the error and report
-        // it later, however.
-        let _ = write!(uart, "Start main loop iteration\n");
+        print!("Start main loop iteration\n");
 
         restart_watchdog();
 

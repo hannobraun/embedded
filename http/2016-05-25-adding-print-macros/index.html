@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>embedded.hannobraun.de</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+    </head>
+
+    <body>
+        <main>
+            <p class="date">2016-05-25</p>
+            <h1>Adding Print Macros</h1>
+
+            <p>
+                In the <a href="/2016-05-21-writing-debug-output">last article</a>, I added the capability to write debug output via UART. Since I hooked this up to Rust's <a href="https://doc.rust-lang.org/nightly/core/fmt/">formatting infrastructure</a>, this gives us the capability to write all kinds of complex output.
+            </p>
+
+            <p>
+                To do that, however, we need to pass the <code>Uart</code> struct around as an argument. Not only might we decide to add or remove debug output on the fly, requiring us to constantly update the argument lists of potentially many different functions, we might also need to print debug output from an interrupt handler, and we can't pass an argument into those.
+            </p>
+
+            <p>
+                What we need to solve those problems is a global instance of the <code>Uart</code> struct that we can call from everywhere, and a convenient way to access it. After thinking about this problem for a bit, I decided it was best to mimic the <code><a href="https://doc.rust-lang.org/nightly/std/macro.print!.html">print! macro</a></code> from Rust's standard libary.
+            </p>
+
+            <p>
+                Here's that global variable:
+            </p>
+
+            <pre>
+pub static mut UART: Option&lt;Uart&gt; = None;
+            </pre>
+
+            <p>
+                It starts out in an uninitialized state. We need to run the initialization code before we can use it.
+            </p>
+
+            <pre>
+pub unsafe fn init(pin: uart::UndefinedPin) {
+    UART = Some(Uart::new(pin));
+}
+            </pre>
+
+            <p>
+                After initialization, we can use the following macro to print debug output:
+            </p>
+
+
+            <pre>
+macro_rules! print {
+    ($($args:tt)*) => {
+        // Ignore logging errors. It's not worth killing the program because of
+        // failed debug output. It would be nicer to save the error and report
+        // it later, however.
+        if let &amp;mut Some(ref mut uart) = unsafe { &amp;mut debug::UART } {
+            let _ = write!(uart, $($args)*);
+        }
+    }
+}
+            </pre>
+
+            <p>
+                The macro checks, if the global variable has been initialized. If it has been, it uses it to print the debug output.
+            </p>
+
+            <p>
+                As a matter of convenience, I've also added a <code>println!</code> macro:<a class="footnote" href="#note-1">[1]</a>
+            </p>
+
+            <pre>
+macro_rules! println {
+    ($fmt:expr)               => ( print!(concat!($fmt, '\n')) );
+    ($fmt:expr, $($args:tt)*) => ( print!(concat!($fmt, '\n'), args) );
+}
+            </pre>
+
+            <p>
+                Here's our updated program:
+            </p>
+
+            <pre>
+pub fn start() {
+    // LED blinking initialization code omitted
+
+    let uart_tx = unsafe { pio::a().pin_9() };
+    unsafe { debug::init(uart_tx) };
+
+    loop {
+        println!("Start main loop iteration");
+
+        // LED blinking code and other details omitted
+    }
+}
+
+            </pre>
+
+            <p>
+                And that's it. Now we can conventiently insert <code>print!</code> and <code>println!</code> calls whereever we want, without needing to update the surrounding code.
+            </p>
+
+            <p>
+                That wraps us up for today! As always, the full code is available <a href="https://github.com/hannobraun/embedded">on GitHub</a>. See you next time!
+            </p>
+
+            <hr />
+
+            <footer>
+                <a name="note-1"></a>
+                <span class="footnote-number">[1]</span>
+                <p>
+                    This implementation is actually almost identical to the <code>println!</code> implementation in <a href="https://github.com/rust-lang/rust/blob/8393d99c356e51128e0125aa23a7824d6ff513b2/src/libstd/macros.rs#L118">the standard library</a>.
+                </p>
+            </footer>
+
+            <hr />
+        </main>
+
+        <footer>
+            <p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+        </footer>
+    </body>
+</html>

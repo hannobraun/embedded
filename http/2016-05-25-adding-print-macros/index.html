@@ -16,11 +16,11 @@
             </p>
 
             <p>
-                To do that, however, we need to pass the <code>Uart</code> struct around as an argument. Not only might we decide to add or remove debug output on the fly, requiring us to constantly update the argument lists of potentially many different functions, we might also need to print debug output from an interrupt handler, and we can't pass an argument into those.
+                To do that, however, we need to pass the <code>Uart</code> struct around to all functions that need to print output. This makes it very inconvenient to add and remove debug output on the fly. In addition, we can't use this infrastructure from interrupt handlers, as we can't pass arguments into those.
             </p>
 
             <p>
-                What we need to solve those problems is a global instance of the <code>Uart</code> struct that we can call from everywhere, and a convenient way to access it. After thinking about this problem for a bit, I decided it was best to mimic the <code><a href="https://doc.rust-lang.org/nightly/std/macro.print!.html">print! macro</a></code> from Rust's standard libary.
+                What we need to solve those problems is a global instance of the <code>Uart</code> struct that we can call from everywhere, and a convenient way to access it. After thinking about this problem for a bit, I decided it was best to mimic the <a href="https://doc.rust-lang.org/nightly/std/macro.print!.html"><code>print!</code macro</a> from Rust's standard libary.
             </p>
 
             <p>
@@ -99,7 +99,7 @@ pub fn start() {
             </p>
 
             <p>
-                That wraps us up for today! As always, the full code is available <a href="https://github.com/hannobraun/embedded">on GitHub</a>. See you next time!
+                This wraps us up for today! As always, the full code is available <a href="https://github.com/hannobraun/embedded">on GitHub</a>. See you next time!
             </p>
 
             <hr />

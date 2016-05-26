@@ -1,5 +1,3 @@
-use core::fmt::Write;
-
 use debug;
 use hardware::safe::nvic::Nvic;
 use hardware::safe::pio;

@@ -14,12 +14,16 @@ pub unsafe fn init(pin: uart::UndefinedPin) {
 
 macro_rules! print {
     ($($args:tt)*) => {
-        // Ignore logging errors. It's not worth killing the program because of
-        // failed debug output. It would be nicer to save the error and report
-        // it later, however.
-        if let &mut Some(ref mut uart) = unsafe { &mut $crate::debug::UART } {
-            use core::fmt::Write;
-            let _ = write!(uart, $($args)*);
+        {
+            let uart = unsafe { &mut $crate::debug::UART };
+
+            // Ignore logging errors. It's not worth killing the program
+            // because of failed debug output. It would be nicer to save the
+            // error and report it later, however.
+            if let &mut Some(ref mut uart) = uart {
+                use core::fmt::Write;
+                let _ = write!(uart, $($args)*);
+            }
         }
     }
 }

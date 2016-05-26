@@ -18,6 +18,7 @@ macro_rules! print {
         // failed debug output. It would be nicer to save the error and report
         // it later, however.
         if let &mut Some(ref mut uart) = unsafe { &mut $crate::debug::UART } {
+            use core::fmt::Write;
             let _ = write!(uart, $($args)*);
         }
     }

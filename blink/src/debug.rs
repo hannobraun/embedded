@@ -17,7 +17,7 @@ macro_rules! print {
         // Ignore logging errors. It's not worth killing the program because of
         // failed debug output. It would be nicer to save the error and report
         // it later, however.
-        if let &mut Some(ref mut uart) = unsafe { &mut debug::UART } {
+        if let &mut Some(ref mut uart) = unsafe { &mut $crate::debug::UART } {
             let _ = write!(uart, $($args)*);
         }
     }

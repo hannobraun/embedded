@@ -15,6 +15,7 @@ pub unsafe fn init(pin: uart::UndefinedPin) {
 macro_rules! print {
     ($($args:tt)*) => {
         {
+            #[allow(unused_unsafe)]
             let uart = unsafe { &mut $crate::debug::UART };
 
             // Ignore logging errors. It's not worth killing the program

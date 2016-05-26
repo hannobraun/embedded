@@ -13,12 +13,6 @@ pub extern fn panic_fmt() {
     loop {}
 }
 
-#[lang = "eh_personality"]
-pub extern fn eh_personality() {
-    panic!("eh_personality function has been called")
-}
-
-
 // I'm not 100% sure what this function does, but references to it are compiled
 // into the program by the Rust compiler. I think it would be called in the
 // case of a program panic.

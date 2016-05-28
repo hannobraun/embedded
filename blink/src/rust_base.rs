@@ -1,7 +1,7 @@
 // Some basic stuff that is required to get Rust and its core library to work.
 
 
-use core::fmt::Arguments;
+use core::fmt;
 
 
 // These are a few language items that are required by the core library. The
@@ -11,7 +11,7 @@ use core::fmt::Arguments;
 
 #[lang = "panic_fmt"]
 pub extern fn rust_begin_unwind(
-	_message: &Arguments,
+	_message: &fmt::Arguments,
 	_file   : &'static str,
 	_line   : u32,
 ) -> ! {

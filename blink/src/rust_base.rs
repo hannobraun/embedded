@@ -13,17 +13,17 @@ use debug;
 
 #[lang = "panic_fmt"]
 pub extern fn rust_begin_unwind(
-	message: fmt::Arguments,
-	file   : &'static str,
-	line   : u32,
+    message: fmt::Arguments,
+    file   : &'static str,
+    line   : u32,
 ) -> ! {
-	print!("Panic ({}:{}): ", file, line);
-	if let &mut Some(ref mut uart) = unsafe { &mut debug::UART } {
-		// We're already panicking, so there's really nothing we could do with
-		// an error while writing the output here.
-		let _ = fmt::write(uart, message);
-	}
-	println!("");
+    print!("Panic ({}:{}): ", file, line);
+    if let &mut Some(ref mut uart) = unsafe { &mut debug::UART } {
+        // We're already panicking, so there's really nothing we could do with
+        // an error while writing the output here.
+        let _ = fmt::write(uart, message);
+    }
+    println!("");
 
     // TODO: Reset the system.
     loop {}

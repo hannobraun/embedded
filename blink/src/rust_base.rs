@@ -3,6 +3,8 @@
 
 use core::fmt;
 
+use debug;
+
 
 // These are a few language items that are required by the core library. The
 // core library is completely platform agnostic and doesn't assume anything
@@ -11,12 +13,19 @@ use core::fmt;
 
 #[lang = "panic_fmt"]
 pub extern fn rust_begin_unwind(
-	_message: fmt::Arguments,
-	_file   : &'static str,
-	_line   : u32,
+	message: fmt::Arguments,
+	file   : &'static str,
+	line   : u32,
 ) -> ! {
-    // TODO: Print a message to serial output, if available and reset the
-    //       system.
+	print!("Panic ({}:{}): ", file, line);
+	if let &mut Some(ref mut uart) = unsafe { &mut debug::UART } {
+		// We're already panicking, so there's really nothing we could do with
+		// an error while writing the output here.
+		let _ = fmt::write(uart, message);
+	}
+	println!("");
+
+    // TODO: Reset the system.
     loop {}
 }
 

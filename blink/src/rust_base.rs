@@ -25,7 +25,9 @@ pub extern fn rust_begin_unwind(
     }
     println!("");
 
-    // TODO: Reset the system.
+    // Since the watchdog should be properly configured, the system should reset
+    // after a while. It would be nicer to initiate that reset immediately, of
+    // course.
     loop {}
 }
 

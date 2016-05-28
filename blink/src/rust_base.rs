@@ -11,7 +11,7 @@ use core::fmt;
 
 #[lang = "panic_fmt"]
 pub extern fn rust_begin_unwind(
-	_message: &fmt::Arguments,
+	_message: fmt::Arguments,
 	_file   : &'static str,
 	_line   : u32,
 ) -> ! {

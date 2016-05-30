@@ -3,9 +3,12 @@ use hardware::safe::nvic::Nvic;
 use hardware::safe::pio;
 use hardware::safe::rtt::sleep_ms;
 use hardware::safe::wdt::restart_watchdog;
+use interrupts;
 
 
 pub fn start() {
+    interrupts::disable();
+
     let mut nvic = unsafe { Nvic::new() };
 
     // Pin 27 of the PIOB parallel I/O controller corresponds to pin 13 on the

@@ -26,9 +26,6 @@ pub fn sleep_ms(milliseconds: u32, nvic: &mut Nvic) {
         // The reset is only effective after two slow clock cycles. Let's
         // just wait until that has happened.
         // See data sheet, section 13.4.
-        // TASK: Interrupts should really be disabled while we're doing
-        //       this. Otherwise we might miss the point at which the value
-        //       is zero.
         while (*RTT).value.read() != 0 {}
 
         (*RTT).alarm.write(milliseconds);

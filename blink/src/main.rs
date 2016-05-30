@@ -40,6 +40,7 @@ pub mod hardware {
     }
 }
 
+pub mod interrupts;
 pub mod rust_base;
 pub mod volatile;
 

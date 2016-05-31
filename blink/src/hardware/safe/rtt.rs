@@ -1,4 +1,7 @@
-use hardware::base::rtt::RTT;
+use hardware::base::rtt::{
+    self,
+    RTT,
+};
 use hardware::safe::nvic::Nvic;
 
 
@@ -16,11 +19,9 @@ use hardware::safe::nvic::Nvic;
 /// parts of the code might also sleep.
 pub fn sleep_ms(milliseconds: u32, nvic: &mut Nvic) {
     let prescaler_value = 0x00000020; // millisecond resolution (roughly)
-    let interrupt_mask  = 0x00010000; // enable alarm interrupt
-    let reset_timer_bit = 0x00040000;
     unsafe {
         (*RTT).mode.write(
-            reset_timer_bit | interrupt_mask | prescaler_value
+            rtt::RTTRST | rtt::ALMIEN | prescaler_value
         );
 
         // The reset is only effective after two slow clock cycles. Let's

@@ -34,9 +34,8 @@ pub fn sleep_ms(milliseconds: u32, nvic: &mut Nvic) {
 
     nvic.enable_rtt();
 
-    let alarm_status_bit = 0x00000001;
     unsafe {
-        while (*RTT).status.read() & alarm_status_bit == 0 {
+        while (*RTT).status.read() & rtt::ALMS == 0 {
             // Wait for interrupt. Interrupts don't actually need to be enabled
             // for this to work. The processor will wake up again, even if the
             // interrupt is just pending and doesn't actually fire.

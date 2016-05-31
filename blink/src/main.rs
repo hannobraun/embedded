@@ -224,13 +224,15 @@ fn abort() {
 }
 
 fn handle_rtt() {
-    use hardware::base::rtt::RTT;
+    use hardware::base::rtt::{
+        self,
+        RTT,
+    };
 
     // I don't know why, but unless we explicitely disable it, the alarm
     // interrupt just keeps repeating, blocking the whole program.
-    let alarm_interrupt_bit = 0x00010000;
     unsafe {
         let mode = (*RTT).mode.read();
-        (*RTT).mode.write(mode & !alarm_interrupt_bit);
+        (*RTT).mode.write(mode & !rtt::ALMIEN);
     }
 }

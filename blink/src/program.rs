@@ -7,6 +7,8 @@ use interrupts;
 
 
 pub fn start() {
+    // Disable interrupts in general. They will only be enabled where they are
+    // actually needed.
     interrupts::disable();
 
     let mut nvic = unsafe { Nvic::new() };

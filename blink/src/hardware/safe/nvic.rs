@@ -11,10 +11,9 @@ impl Nvic {
         Nvic(())
     }
 
-    pub fn enable_rtt(&mut self) {
-        let rtt = Peripheral::Rtt;
+    pub fn enable(&mut self, peripheral: &Peripheral) {
         unsafe {
-            (*ISER)[rtt.index()].write(rtt.mask());
+            (*ISER)[peripheral.index()].write(peripheral.mask());
         }
     }
 }

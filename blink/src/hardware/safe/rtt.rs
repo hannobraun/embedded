@@ -3,6 +3,7 @@ use hardware::base::rtt::{
     RTT,
 };
 use hardware::safe::nvic::Nvic;
+use hardware::safe::peripherals::Peripheral;
 
 
 /// Sleep for a period of time roughly corresponding to the given number
@@ -32,7 +33,7 @@ pub fn sleep_ms(milliseconds: u32, nvic: &mut Nvic) {
         (*RTT).alarm.write(milliseconds);
     }
 
-    nvic.enable_rtt();
+    nvic.enable(&Peripheral::Rtt);
 
     unsafe {
         while (*RTT).status.read() & rtt::ALMS == 0 {

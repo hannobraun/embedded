@@ -1,5 +1,5 @@
 use hardware::base::nvic::{
-    ISER0,
+    ISER,
     RTT,
 };
 
@@ -15,7 +15,7 @@ impl Nvic {
 
     pub fn enable_rtt(&mut self) {
         unsafe {
-            (*ISER0).write(RTT);
+            (*ISER)[0].write(RTT);
         }
     }
 }

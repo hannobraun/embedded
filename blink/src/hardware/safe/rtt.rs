@@ -39,7 +39,19 @@ pub fn sleep_ms(milliseconds: u32, nvic: &mut Nvic) {
             // Wait for interrupt. Interrupts don't actually need to be enabled
             // for this to work. The processor will wake up again, even if the
             // interrupt is just pending and doesn't actually fire.
-            asm!("wfi" :::: "volatile");
+            // The data synchronization barrier before the interrupt is added
+            // to ensure all memory accesses have completed before putting the
+            // processor to sleep. This might not be strictly necessary in this
+            // case, but it's safer in general. The wake-up condition might be
+            // modified before sleeping, which could cause the program to not
+            // wake up as expected.
+            asm!(
+                "
+                    dsb
+                    wfi
+                "
+                :::: "volatile"
+            );
         }
     }
 }

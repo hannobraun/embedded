@@ -36,9 +36,10 @@ pub fn sleep_ms(milliseconds: u32, nvic: &mut Nvic) {
 
     unsafe {
         while (*RTT).status.read() & rtt::ALMS == 0 {
-            // Wait for interrupt. Interrupts don't actually need to be enabled
-            // for this to work. The processor will wake up again, even if the
-            // interrupt is just pending and doesn't actually fire.
+            // Wait for interrupt.
+            // Interrupts don't actually need to be enabled for this to work.
+            // The processor will wake up again, even if the interrupt is just
+            // pending and doesn't actually fire.
             // The data synchronization barrier before the interrupt is added
             // to ensure all memory accesses have completed before putting the
             // processor to sleep. This might not be strictly necessary in this

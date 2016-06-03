@@ -56,6 +56,10 @@ impl Peripheral {
         *self as u32
     }
 
+    pub fn index(&self) -> usize {
+        self.id() as usize / 32
+    }
+
     pub fn mask(&self) -> u32 {
         0x1 << self.id() % 32
     }

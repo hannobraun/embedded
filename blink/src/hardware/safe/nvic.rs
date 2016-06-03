@@ -1,7 +1,5 @@
-use hardware::base::nvic::{
-    ISER,
-    RTT,
-};
+use hardware::base::nvic::ISER;
+use hardware::safe::peripherals::Peripheral;
 
 
 pub struct Nvic(());
@@ -14,8 +12,9 @@ impl Nvic {
     }
 
     pub fn enable_rtt(&mut self) {
+        let rtt = Peripheral::Rtt;
         unsafe {
-            (*ISER)[0].write(RTT);
+            (*ISER)[0].write(rtt.mask());
         }
     }
 }

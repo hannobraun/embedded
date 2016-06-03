@@ -57,11 +57,6 @@ impl Peripheral {
     }
 
     pub fn mask(&self) -> u32 {
-        if self.id() < 32 {
-            0x1 << self.id()
-        }
-        else {
-            0x1 << (self.id() - 32)
-        }
+        0x1 << self.id() % 32
     }
 }

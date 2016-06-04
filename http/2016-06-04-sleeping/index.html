@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>embedded.hannobraun.de</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+    </head>
+
+    <body>
+        <main>
+            <p class="date">2016-06-04</p>
+            <h1>Saving Power</h1>
+
+            <p>
+                When we <a href="/2015-10-05-adding-a-safe-api-for-the-timer">last looked into sleeping</a>, our sleep function was very primitive. It just waited busily until the required amount of time had passed before it returned to the caller. While this was fine to get things up and running, it wasn't ideal. There are much smarter ways to do that.
+            </p>
+
+            <p>
+                The SAM3X8E has several low-power modes that we can use in the sleep function to save power while we're waiting.<a class="footnote" href="#note-1">[1]</a> Instead of producing heat and wasting power (which means burning through the battery, if our system isn't connected to the grid), we can just put most of the microcontrollers functions to sleep, until the right time has come to be woken up again.
+            </p>
+
+            <p>
+                Before we can get into the sleep functions, we need to make a fundamental decision: When to allow interrupts to occur. An interrupt, well, interrupts the normal program execution, which can cause problems in some code. The code currently running might be time-sensitive, or it might currently be modifying data structures that are also modified by an interrupt. Both cases would lead to problems, if the code were to be interrupted.
+            </p>
+
+            <p>
+                One solution to this problem is generally allowing interrupts, but defining critical sections during which they are disabled.<a class="footnote" href="#note-2">[2]</a> Unfortunately this approach is quite error-prone. If you forget a critical section where one would be needed, this can lead to very subtle bugs.
+            </p>
+
+            <p>
+                I opted for a safer, and possible less efficient, approach: Disabling all interrupts at the beginning of the program, and only enabling them in specific locations in the code. This leaves us free not to worry about interrupts in most of the code, making it easier to write correct code and preventing lots of potential bugs outright.
+            </p>
+
+            <p>
+                Here's the function that is used to disable the interrupts:
+            </p>
+
+            <pre>
+pub fn disable() {
+    unsafe {
+        asm!("cpsid i" :::: "volatile");
+    }
+}
+            </pre>
+
+            <p>
+                This is our first use of inline assember.<a class="footnote" href="#note-3">[3]</a> The <code>cpsid i</code> tell the microcontroller to disable interrupts<a class="footnote" href="#note-4">[4]</a>, while <code>volatile</code> tells the compiler that this instruction has an unspecified effect and must not be reordered in regards to neighbouring instructions for optimization purposes. We'll examine later where this fits into our program.
+            </p>
+
+            <p>
+                Another interrupt-related piece of functionality we need is enabling the RTT (Real-time Timer) interrupts. Please don't worry too much about how this fits into the bigger picture. I'm going to explain that in a moment. For now, here's the code we need to do it:
+            </p>
+
+            <pre>
+pub struct Nvic(());
+
+impl Nvic {
+    pub unsafe fn new() -> Self {
+        Nvic(())
+    }
+
+    pub fn enable(&amp;mut self, peripheral: &amp;Peripheral) {
+        unsafe {
+            (*ISER)[peripheral.index()].write(peripheral.mask());
+        }
+    }
+}
+            </pre>
+
+            <p>
+                This is a safe interface that represents the NVIC (Nested Vector Interrupt Controller). I will not go into the low-level interface that it wraps, as it looks a lot (altough not exactly) like the other ones that I've shown in past articles. 
+            </p>
+
+            <p>
+                The important thing to understand here is that we write to one of the Interrupt Set-enable Registers to activate interrupts for a specific peripheral. Because there are more than 32 peripherals (which means a 32-bit mask is no sufficient to represent them), there are two of those registers, and we need an index to access them.<a class="footnote" href="#note-5">[5]</a>
+            </p>
+
+            <p>
+                To help us with this, we have an enum with variants for each of the peripherals in the SAM3X8E. Here's how it looks like:
+            </p>
+
+            <pre>
+use hardware::base::peripherals;
+
+
+#[derive(Clone, Copy)]
+#[repr(u32)]
+pub enum Peripheral {
+    Supc      = peripherals::SUPC,
+    Rstc      = peripherals::RSTC,
+
+    // Other peripheral variants omitted for brevity
+}
+
+impl Peripheral {
+    pub fn id(&amp;self) -> u32 {
+        *self as u32
+    }
+
+    pub fn index(&amp;self) -> usize {
+        self.id() as usize / 32
+    }
+
+    pub fn mask(&amp;self) -> u32 {
+        0x1 << (self.id() % 32)
+    }
+}
+
+            </pre>
+
+            <p>
+                As you can see there's not a lot going on here. Each peripheral has an id, which is just a 32-bit number (e.g. the Supply Controller has id 0, the Reset Controller has id 1). As mentioned above, there are more than 32 peripherals, making it impossible to represent them all in a single 32-bit mask. Therefore, various registers (like <code>ISER</code> above) come in two variants. The <code>index</code> method gives us the index for the correct one. Finally, the <code>mask</code> method converts the id into a mask that can be used with those registers.<a class="footnote" href="#note-6">[6]</a>
+            </p>
+
+            <p>
+                Now we're ready to get into the meat of this article: The new sleeping code. I've decided to make things a bit simpler than before and move everything into a single function that does all the set-up and the sleeping itself.<a class="footnote" href="#note-7">[7]</a> First, let's take a look at the set-up code:
+            </p>
+
+            <pre>
+pub fn sleep_ms(milliseconds: u32, nvic: &amp;mut Nvic) {
+    let prescaler_value = 0x00000020; // millisecond resolution (roughly)
+    unsafe {
+        (*RTT).mode.write(
+            rtt::RTTRST | rtt::ALMIEN | prescaler_value
+        );
+
+        // The reset is only effective after two slow clock cycles. Let's
+        // just wait until that has happened.
+        // See data sheet, section 13.4.
+        while (*RTT).value.read() != 0 {}
+
+        (*RTT).alarm.write(milliseconds);
+    }
+
+    nvic.enable(&amp;Peripheral::Rtt);
+
+    // Actual sleep code goes here
+}
+            </pre>
+
+            <p>
+                We first write to the mode register to reset the timer, enable the alarm interrupt, and write a prescaler value that sets the timer to a resolution of roughly a millisecond. Then we wait for timer to actually reset (this is one of the places where we would need a critical section, had we not disabled interrupts), and set the alarm by writing to the alarm register.<a class="footnote" href="#note-8">[8]</a>
+            </p>
+
+            <p>
+                The final step of preparation is to activate the RTT interrupt using the NVIC interface shown above. How does this fit together with the fact that we've disabled interrupts in general? Well, there are two steps to configuring interrupts: We can enable/disable interrupts by peripheral, and we can enable/disable interrupt handler execution for all peripherals.<a class="footnote" href="#note-9">[9]</a>
+            </p>
+
+            <p>
+                As far as I can tell, if interrupts are disabled for a peripheral, it's as if those interrupts don't exist. You have to enable the RTT interrupts for example, if you want to do anything with them at all. Once you've done that, you can check whether they occured, and see various other effects from that. By itself, that doesn't execute the interrupt handler functions though. For that to happen, interrupt handler execution needs to be enabled using the <code>cps</code> instruction family (see above).
+            </p>
+
+            <p>
+                One fact to take note of is that interrupt execution in general is enabled by default, but interrupts for specific peripherals are disabled by default.
+            </p>
+
+            <p>
+                Ok, now that we've done the set-up for the sleep, let's actually sleep.
+            </p>
+
+            <pre>
+pub fn sleep_ms(milliseconds: u32, nvic: &amp;mut Nvic) {
+    // Set-up code goes here
+
+    unsafe {
+        while (*RTT).status.read() &amp; rtt::ALMS == 0 {
+            asm!(
+                "
+                    dsb
+                    wfi
+                "
+                :::: "volatile"
+            );
+        }
+    }
+}
+            </pre>
+
+            <p>
+                In a loop, we check whether the alarm interrupt that we've enabled above has occured. If it hasn't yet, we put the program to sleep with the <code>wfi</code> instruction.<a class="footnote" href="#note-10">[10]</a> The <code>dsb</code> instruction before <code>wfi</code> is a Data Synchronization Barrier. This is an instruction that won't complete until all the memory accesses that come before it have been completed.<a class="footnote" href="#note-11">[11]</a> Those memory accesses might have been buffered, so them completing before the processor goes to sleep is not a given.
+            </p>
+
+            <p>
+                The Data Synchronization Barrier is not actually necessary here, but it's better to have it to cover edge cases and ease porting to other ARM processors. It's generally recommended to have it.<a class="footnote" href="#note-12">[12]</a>
+            </p>
+
+            <p>
+                Finally, here's our updated program:
+            </p>
+
+            <pre>
+interrupts::disable();
+
+let mut nvic = unsafe { Nvic::new() };
+
+let led = unsafe { pio::b().pin_27() };
+let mut led = led
+    .enable()
+    .enable_output();
+
+let uart_tx = unsafe { pio::a().pin_9() };
+unsafe { debug::init(uart_tx) };
+
+loop {
+    println!("Start main loop iteration");
+
+    restart_watchdog();
+
+    led.set_output();
+    sleep_ms(200, &amp;mut nvic);
+    led.clear_output();
+    sleep_ms(800, &amp;mut nvic);
+            </pre>
+
+            <p>
+                And that's it for today! As always, the full code is available <a href="https://github.com/hannobraun/embedded">on GitHub</a>. See you next time!
+            </p>
+
+            <hr />
+
+            <footer>
+                <a name="note-1"></a>
+                <span class="footnote-number">[1]</span>
+                <p>
+                    Section 5.6 in the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a> for a description of the low-power modes.
+                </p>
+
+                <a name="note-2"></a>
+                <span class="footnote-number">[2]</span>
+                <p>
+                    Wikipedia has <a href="https://en.wikipedia.org/wiki/Critical_section">an article</a> about critical sections.
+                </p>
+
+                <a name="note-3"></a>
+                <span class="footnote-number">[3]</span>
+                <p>
+                    Inline assembly is a common feature in C, which allows the programmer to embed architecture-specific assembler code into the code of the higher-level language. This can be done for efficiency reasons, but is often required to access certain low-level hardware features that would otherwise be inaccessible from the high-level language. Inline assembly is also available in Rust, and <a href="https://doc.rust-lang.org/book/inline-assembly.html">the official documentation</a> has a chapter on the topic.
+                </p>
+
+                <a name="note-4"></a>
+                <span class="footnote-number">[4]</span>
+                <p>
+                    Section 10.18.2 in the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a> has a full description if the <code>cps</code> instruction.
+                </p>
+
+                <a name="note-5"></a>
+                <span class="footnote-number">[5]</span>
+                <p>
+                    The <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a> describes the Nested Vector Interrupt Controller in section 10.20.
+                </p>
+
+                <a name="note-6"></a>
+                <span class="footnote-number">[6]</span>
+                <p>
+                    Please refer to section 9.1 in the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a> for a table with all peripheral ids.
+                </p>
+
+                <a name="note-7"></a>
+                <span class="footnote-number">[7]</span>
+                <p>
+                    I'm actually not sure, if this is the best solution. During development it looked like I might need to update the timer configuration from an interrupt handler, so making sure everything is set up correctly before sleeping seemed prudent. It turned out later that the interrupt handler wasn't actually required, but I decided to still keep the sleep code as a single function, for now.
+                </p>
+
+                <a name="note-8"></a>
+                <span class="footnote-number">[8]</span>
+                <p>
+                    I'm not going to say any more about the RTT (Real-time Timer), as <a href="/2015-05-18-cleaning-up-the-timer-code">we went over it already</a>. Chapter 13 in the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a> has all the information about how it works.
+                </p>
+
+                <a name="note-9"></a>
+                <span class="footnote-number">[9]</span>
+                <p>
+                    Unfortunately I couldn't find any good references for what I'm explaining here. Bits and pieces are scattered all over the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>, so figuring this out took a lot of reading and experimentation. In general, there is information about interrupts in sections 10.6 and 10.20. There's  also peripheral-specific information in the various peripheral chapters (for example chapter 13 for the RTT). If you don't just want to take my word for it, I encourage you to experiment for yourself.
+                </p>
+
+                <a name="note-10"></a>
+                <span class="footnote-number">[10]</span>
+                <p>
+                    The <code>wfi</code> instruction is described in section 10.18.12 of the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a>.
+                </p>
+
+                <a name="note-11"></a>
+                <span class="footnote-number">[11]</span>
+                <p>
+                    Refer to section 10.18.4 of the <a href="http://www.atmel.com/Images/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf">data sheet</a> for a description of the <code>dsb</code> instruction.
+                </p>
+
+                <a name="note-12"></a>
+                <span class="footnote-number">[12]</span>
+                <p>
+                    This is explained in the <a href="http://infocenter.arm.com/help/topic/com.arm.doc.dai0321a/DAI0321A_programming_guide_memory_barriers_for_m_profile.pdf">ARM Cortex-M Programming Guide to Memory Barrier Instructions</a>, section 4.14.
+                </p>
+            </footer>
+
+            <hr />
+        </main>
+
+        <footer>
+            <p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+        </footer>
+    </body>
+</html>

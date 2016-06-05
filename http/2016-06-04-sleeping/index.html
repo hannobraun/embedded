@@ -9,26 +9,26 @@
     <body>
         <main>
             <p class="date">2016-06-04</p>
-            <h1>Saving Power</h1>
+            <h1>Sleeping</h1>
 
             <p>
-                When we <a href="/2015-10-05-adding-a-safe-api-for-the-timer">last looked into sleeping</a>, our sleep function was very primitive. It just waited busily until the required amount of time had passed before it returned to the caller. While this was fine to get things up and running, it wasn't ideal. There are much smarter ways to do that.
+                When we <a href="/2015-10-05-adding-a-safe-api-for-the-timer">last looked into sleeping</a>, our sleep function was very primitive. It just waited busily until the required amount of time had passed, before it returned to the caller. While this was fine to get things up and running, it wasn't ideal. There are much ways to do that.
             </p>
 
             <p>
-                The SAM3X8E has several low-power modes that we can use in the sleep function to save power while we're waiting.<a class="footnote" href="#note-1">[1]</a> Instead of producing heat and wasting power (which means burning through the battery, if our system isn't connected to the grid), we can just put most of the microcontrollers functions to sleep, until the right time has come to be woken up again.
+                The SAM3X8E has several low-power modes that we can use in the sleep function to save power while we're waiting.<a class="footnote" href="#note-1">[1]</a> Instead of producing heat and wasting power (which means burning through the battery, if our system isn't connected to the grid), we can just put most of the microcontrollers functions to sleep, until the right time has come to wake up again.
             </p>
 
             <p>
-                Before we can get into the sleep functions, we need to make a fundamental decision: When to allow interrupts to occur. An interrupt, well, interrupts the normal program execution, which can cause problems in some code. The code currently running might be time-sensitive, or it might currently be modifying data structures that are also modified by an interrupt. Both cases would lead to problems, if the code were to be interrupted.
+                Before we can get into the sleeping itself, we need to make a fundamental decision: When to allow interrupts to occur. An interrupt, well, interrupts the normal program execution, which can cause problems in some code. The code currently running might be time-sensitive, or it might be modifying data structures that are also accessed by an interrupt handler. Both cases would lead to problems, if the code were to be interrupted.
             </p>
 
             <p>
-                One solution to this problem is generally allowing interrupts, but defining critical sections during which they are disabled.<a class="footnote" href="#note-2">[2]</a> Unfortunately this approach is quite error-prone. If you forget a critical section where one would be needed, this can lead to very subtle bugs.
+                One solution to this problem is generally allowing interrupts, but defining critical sections during which they are disabled.<a class="footnote" href="#note-2">[2]</a> Unfortunately this approach is quite error-prone. If you forget a critical section where one would be needed, this can cause very subtle bugs.
             </p>
 
             <p>
-                I opted for a safer, and possible less efficient, approach: Disabling all interrupts at the beginning of the program, and only enabling them in specific locations in the code. This leaves us free not to worry about interrupts in most of the code, making it easier to write correct code and preventing lots of potential bugs outright.
+                I opted for a safer, but possibly less efficient approach: Disabling all interrupts at the beginning of the program, and only enabling them in specific sections of the code. This leaves us free not to worry about interrupts in most of the code, making it easier to write correct code, preventing lots of potential bugs outright.
             </p>
 
             <p>
@@ -44,7 +44,7 @@ pub fn disable() {
             </pre>
 
             <p>
-                This is our first use of inline assember.<a class="footnote" href="#note-3">[3]</a> The <code>cpsid i</code> tell the microcontroller to disable interrupts<a class="footnote" href="#note-4">[4]</a>, while <code>volatile</code> tells the compiler that this instruction has an unspecified effect and must not be reordered in regards to neighbouring instructions for optimization purposes. We'll examine later where this fits into our program.
+                This is our first use of inline assembly.<a class="footnote" href="#note-3">[3]</a> The <code>cpsid i</code> tell the microcontroller to disable interrupts<a class="footnote" href="#note-4">[4]</a>, while <code>volatile</code> tells the compiler that this instruction has an unspecified effect and must not be reordered in regards to neighbouring instructions for optimization purposes. We'll examine later where this fits into our program.
             </p>
 
             <p>
@@ -76,7 +76,7 @@ impl Nvic {
             </p>
 
             <p>
-                To help us with this, we have an enum with variants for each of the peripherals in the SAM3X8E. Here's how it looks like:
+                To help us with this, I wrote an enum with variants for each of the SAM3X8E's peripherals. Here's how that looks like:
             </p>
 
             <pre>
@@ -109,11 +109,11 @@ impl Peripheral {
             </pre>
 
             <p>
-                As you can see there's not a lot going on here. Each peripheral has an id, which is just a 32-bit number (e.g. the Supply Controller has id 0, the Reset Controller has id 1). As mentioned above, there are more than 32 peripherals, making it impossible to represent them all in a single 32-bit mask. Therefore, various registers (like <code>ISER</code> above) come in two variants. The <code>index</code> method gives us the index for the correct one. Finally, the <code>mask</code> method converts the id into a mask that can be used with those registers.<a class="footnote" href="#note-6">[6]</a>
+                As you can see there's not a lot going on here. Each peripheral has an id, which is just a 32-bit number (e.g. the Supply Controller has id 0, the Reset Controller has id 1). As mentioned above, there are more than 32 peripherals, making it impossible to represent them all in a single 32-bit mask. Therefore, various registers (like <code>ISER</code> above) come in two variants. The <code>index</code> method gives us the index of the correct one, for a given peripheral. Finally, the <code>mask</code> method converts the id into a mask that can be used with those registers.<a class="footnote" href="#note-6">[6]</a>
             </p>
 
             <p>
-                Now we're ready to get into the meat of this article: The new sleeping code. I've decided to make things a bit simpler than before and move everything into a single function that does all the set-up and the sleeping itself.<a class="footnote" href="#note-7">[7]</a> First, let's take a look at the set-up code:
+                Now we're ready to get into the meat of this article: The new sleeping code. I've decided to make things a bit simpler than before and move everything into a single function that does all the set-up and sleeping.<a class="footnote" href="#note-7">[7]</a> First, let's take a look at the set-up code:
             </p>
 
             <pre>
@@ -177,11 +177,11 @@ pub fn sleep_ms(milliseconds: u32, nvic: &amp;mut Nvic) {
             </pre>
 
             <p>
-                In a loop, we check whether the alarm interrupt that we've enabled above has occured. If it hasn't yet, we put the program to sleep with the <code>wfi</code> instruction.<a class="footnote" href="#note-10">[10]</a> The <code>dsb</code> instruction before <code>wfi</code> is a Data Synchronization Barrier. This is an instruction that won't complete until all the memory accesses that come before it have been completed.<a class="footnote" href="#note-11">[11]</a> Those memory accesses might have been buffered, so them completing before the processor goes to sleep is not a given.
+                In a loop, we check whether the alarm interrupt that we've enabled above has occured. If it hasn't yet, we put the program to sleep with the <code>wfi</code> instruction.<a class="footnote" href="#note-10">[10]</a> It will wake up again if any interrupt occurs, even if no interrupt handler is actually executed. The <code>dsb</code> instruction before <code>wfi</code> is a Data Synchronization Barrier. This is an instruction that won't complete until all the memory accesses that come before it have been completed.<a class="footnote" href="#note-11">[11]</a> Those memory accesses might have been buffered, so them completing before the processor goes to sleep is not a given.
             </p>
 
             <p>
-                The Data Synchronization Barrier is not actually necessary here, but it's better to have it to cover edge cases and ease porting to other ARM processors. It's generally recommended to have it.<a class="footnote" href="#note-12">[12]</a>
+                The Data Synchronization Barrier is not actually necessary here, but it's better to have it, to cover edge cases and ease porting to other ARM processors. It's generally recommended to have it.<a class="footnote" href="#note-12">[12]</a>
             </p>
 
             <p>
@@ -288,7 +288,7 @@ loop {
                 <a name="note-12"></a>
                 <span class="footnote-number">[12]</span>
                 <p>
-                    This is explained in the <a href="http://infocenter.arm.com/help/topic/com.arm.doc.dai0321a/DAI0321A_programming_guide_memory_barriers_for_m_profile.pdf">ARM Cortex-M Programming Guide to Memory Barrier Instructions</a>, section 4.14.
+                    This is documented in the <a href="http://infocenter.arm.com/help/topic/com.arm.doc.dai0321a/DAI0321A_programming_guide_memory_barriers_for_m_profile.pdf">ARM Cortex-M Programming Guide to Memory Barrier Instructions</a>, section 4.14.
                 </p>
             </footer>
 

@@ -60,6 +60,7 @@ extern {
 
 
 // The data structure for the vector table. See data sheet, chapter 10.6.4.
+#[repr(C)]
 pub struct VectorTable {
     pub initial_stack_pointer: &'static u32,
 

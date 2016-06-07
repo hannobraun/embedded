@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>embedded.hannobraun.de</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link href="/main.css" rel="stylesheet" type="text/css" media="all" />
+    </head>
+
+    <body>
+        <main>
+            <p class="date">2016-06-07</p>
+            <h1>Small Fixes II</h1>
+
+            <p>
+                From time to time, I'm making small fixes here or there that neither fit into an existing article, nor do they warrant their own. In today's article, I'm showing you a few of those that I've made over the past few months.
+            </p>
+
+            <p>
+                Let's start with program initialization. There are a few things that need to happen before a program can start. When using an operating system, all of this stuff is usually taken care for you, so you don't see it. When writing an embedded program without relying on operating systems or external libraries, like we do, you have to take care of it yourself.<a class="footnote" href="#note-1">[1]</a>
+            </p>
+
+            <p>
+                One of those initialization steps is copying global variables from the flash memory into RAM. The initial values of global variables need to be available in the program, so they're compiled into the binary. When you change those variables, you don't want to change them where they are located in the binary, however. That would mean the next time the program starts, the variables wouldn't have their initial values anymore, which makes no sense.
+            </p>
+
+            <p>
+                There's some linker trickery going on to make that possible: The compiler puts these initial values into a special segment in the binary, called <code>.data</code>, so the linker knows about them. The linker also knows at which address the RAM starts, which means it knows where the initial values are supposed to end up. It makes this information available to the program via global variables that we can refer to.<a class="footnote" href="#note-2">[2]</a> Here's how we do that:
+            </p>
+
+            <pre>
+extern {
+    static mut _etext    : u32;
+    static mut _srelocate: u32;
+    static mut _erelocate: u32;
+}
+            </pre>
+
+            <p>
+                Code is located in the <code>.text</code> segment, global variables come after the code. <code>_etext</code> is where the <code>.text</code> segment ends, i.e. where the global variables are located. <code>_srelocate</code> and <code>_erelocate</code> mark the beginning and end of the are in RAM where we're going to place those global variables.
+            </p>
+
+            <p>
+                With that information, we can copy the global variables to RAM:
+            </p>
+
+            <pre>
+unsafe {
+    let mut src = &amp;mut _etext     as *const u32;
+    let mut dst = &amp;mut _srelocate as *mut u32;
+
+    while dst < &amp;mut _erelocate as *mut u32 {
+        ptr::write_volatile(
+            dst,
+            ptr::read_volatile(src),
+        );
+
+        src = src.offset(1);
+        dst = dst.offset(1);
+    }
+}
+            </pre>
+
+            <p>
+                That takes care of all variables with initial values. What about uninitialized variables though? Those are located in the <code>.bss</code> segment. Since Rust doesn't have uninitialized global variables, so I don't believe the .bss segment is used in Rust (this might be totally wrong). Uninitialized global variables exist in C though, and there they are specified to actually have an initial value of zero.
+            </p>
+
+            <p>
+                All of this is probably not very relevant to our Rust code, but we might use C libraries later that rely on that behavior. Instead of opening ourselves up to problems that are going to be near-impossible to debug, let's just make sure that this works. Again, the linker gives us the start and end address of the area that needs to be zeroed:
+            </p>
+
+            <pre>
+extern {
+    static mut _szero: u32;
+    static mut _ezero: u32;
+}
+            </pre>
+
+            <p>
+                And here's how we do it:
+            </p>
+
+            <pre>
+unsafe {
+    let mut dst = &amp;mut _szero as *mut u32;
+
+    while dst < &amp;mut _ezero as *mut u32 {
+        ptr::write_volatile(dst, 0);
+        dst = dst.offset(1);
+    }
+}
+            </pre>
+
+            <p>
+                That takes care of initialization, but there's another thing I want to get to in this article: Unwinding. Unwinding is something that happens when a Rust program panics. I'm not going to explain what exactly unwinding is, so please refer to the <a href="https://doc.rust-lang.org/nomicon/unwinding.html">official documentation</a>.
+            </p>
+
+            <p>
+                What's relevant to us, is that the capability to unwind comes with complexity and a runtime cost. We're not going spin up threads and restart them when they panic, so we really don't need unwinding at all. What we want is for the program to just restart in the case of a panic. Fortunately, Rust has recently grown a feature to make that possible: Panic as abort. To remove unwinding completely, we can disable it in <code>Cargo.toml</code>
+            </p>
+
+            <pre>
+[profile.release]
+panic = "abort"
+            </pre>
+
+            <p>
+                This already shaves off a few bytes of our program size, but there's more. There's a language item that we needed to provide to support unwinding. Here's what it looked like:
+            </p>
+
+            <pre>
+#[lang = "eh_personality"]
+pub extern fn eh_personality() {
+    panic!("eh_personality function has been called")
+}
+            </pre>
+
+            <p>
+                With unwinding disabled, it can just be removed completely.
+            </p>
+
+            <p>
+                And that wraps us up for today! As always, the full code is available <a href="https://github.com/hannobraun/embedded">on GitHub</a>. See you next time!
+            </p>
+
+            <hr />
+
+            <footer>
+                <a name="note-1"></a>
+                <span class="footnote-number">[1]</span>
+                <p>
+                    I'm writing a lot in this article without pointing to a lot of references. This is because this is one of those topics that required a lot of reading and experimentation to get right. To get to my level of understanding, I had to pick up information from a lot of different sources, and not only would it be impractical to point to all of those, I can no longer find and/or remember most of them. If you need something to get you started, you can check out <a href="https://en.wikipedia.org/wiki/Data_segment">Wikipedia</a>. Also refer to the other pages linked at the bottom of that article.
+                </p>
+
+                <a name="note-2"></a>
+                <span class="footnote-number">[2]</span>
+                <p>
+                    I won't go into how all of that works in detail, simply because I don't want to open that can of worms. There's a <a href="https://github.com/hannobraun/embedded/blob/c84ceea9ba5210b2ab5a6165de2fdeaaacf4a911/blink/linker-script.ld">linker scripts</a> in the repository that you can study, if you want. The <a href="https://sourceware.org/binutils/docs/ld/index.html">linker documentation</a> should help you. Good luck.
+                </p>
+            </footer>
+
+            <hr />
+        </main>
+
+        <footer>
+            <p>Made by <a href="http://hannobraun.de">Hanno Braun</a></p>
+        </footer>
+    </body>
+</html>

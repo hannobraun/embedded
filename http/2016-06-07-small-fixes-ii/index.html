@@ -12,7 +12,7 @@
             <h1>Small Fixes II</h1>
 
             <p>
-                From time to time, I'm making small fixes here or there that neither fit into an existing article, nor do they warrant their own. In today's article, I'm showing you a few of those that I've made over the past few months.
+                From time to time, I'm making small fixes here or there that neither fit into an existing article, nor do they warrant their own. Today, I'm going to show you a few of those fixes that I've made over the past few months.
             </p>
 
             <p>
@@ -20,11 +20,11 @@
             </p>
 
             <p>
-                One of those initialization steps is copying global variables from the flash memory into RAM. The initial values of global variables need to be available in the program, so they're compiled into the binary. When you change those variables, you don't want to change them where they are located in the binary, however. That would mean the next time the program starts, the variables wouldn't have their initial values anymore, which makes no sense.
+                One of those initialization steps is copying global variables from the flash memory into RAM. The initial values of global variables need to be available to the program, so they're compiled into the binary. When you change those variables, you don't want to change them where they are located in the binary, however. That would mean global variables retained their value between different runs of the program, which makes no sense. That's why we need to copy the variables.
             </p>
 
             <p>
-                There's some linker trickery going on to make that possible: The compiler puts these initial values into a special segment in the binary, called <code>.data</code>, so the linker knows about them. The linker also knows at which address the RAM starts, which means it knows where the initial values are supposed to end up. It makes this information available to the program via global variables that we can refer to.<a class="footnote" href="#note-2">[2]</a> Here's how we do that:
+                There's some linker trickery going on to make that possible: The compiler puts these initial values into a special segment of the binary, called <code>.data</code>, so the linker knows about them. The linker also knows at which address the RAM starts, which means it knows where the initial values are supposed to end up. It makes this information available to the program via global variables that we can refer to.<a class="footnote" href="#note-2">[2]</a> Here's how to do that:
             </p>
 
             <pre>
@@ -36,7 +36,7 @@ extern {
             </pre>
 
             <p>
-                Code is located in the <code>.text</code> segment, global variables come after the code. <code>_etext</code> is where the <code>.text</code> segment ends, i.e. where the global variables are located. <code>_srelocate</code> and <code>_erelocate</code> mark the beginning and end of the are in RAM where we're going to place those global variables.
+                Code is located in the <code>.text</code> segment, global variables come after the code. <code>_etext</code> is where the <code>.text</code> segment ends, i.e. where the global variables are located. <code>_srelocate</code> and <code>_erelocate</code> mark the beginning and end of the area in RAM where we're going to place those global variables.
             </p>
 
             <p>
@@ -61,11 +61,11 @@ unsafe {
             </pre>
 
             <p>
-                That takes care of all variables with initial values. What about uninitialized variables though? Those are located in the <code>.bss</code> segment. Since Rust doesn't have uninitialized global variables, so I don't believe the .bss segment is used in Rust (this might be totally wrong). Uninitialized global variables exist in C though, and there they are specified to actually have an initial value of zero.
+                That takes care of all variables with initial values. What about uninitialized variables though? Those are located in the <code>.bss</code> segment. Rust doesn't have uninitialized global variables, so I don't believe the .bss segment is used in Rust (this might be totally wrong). Uninitialized global variables exist in C though, and there they are specified to actually have an initial value of zero.
             </p>
 
             <p>
-                All of this is probably not very relevant to our Rust code, but we might use C libraries later that rely on that behavior. Instead of opening ourselves up to problems that are going to be near-impossible to debug, let's just make sure that this works. Again, the linker gives us the start and end address of the area that needs to be zeroed:
+                All of this is probably not very relevant to our Rust code, but we might use C libraries later that rely on that behavior. Instead of opening ourselves up to problems that are going to be near-impossible to debug, let's just make sure now that it works. Again, the linker gives us the start and end address of the area where those uninitialized global variables live:
             </p>
 
             <pre>
@@ -76,7 +76,7 @@ extern {
             </pre>
 
             <p>
-                And here's how we do it:
+                All we need to do is to initialize that area by zeroeing it:
             </p>
 
             <pre>
@@ -95,7 +95,7 @@ unsafe {
             </p>
 
             <p>
-                What's relevant to us, is that the capability to unwind comes with complexity and a runtime cost. We're not going spin up threads and restart them when they panic, so we really don't need unwinding at all. What we want is for the program to just restart in the case of a panic. Fortunately, Rust has recently grown a feature to make that possible: Panic as abort. To remove unwinding completely, we can disable it in <code>Cargo.toml</code>
+                What's relevant to us, is that the capability to unwind comes with complexity and a runtime cost. We're not going spin up threads and restart them when they panic, so we really don't need unwinding at all. To us, a panic is a catastrophic failure, and we want the program to just restart in that case. Fortunately, Rust has recently grown a feature to make this possible: Panic as abort. To remove unwinding completely, we can disable it in <code>Cargo.toml</code>
             </p>
 
             <pre>
@@ -104,7 +104,7 @@ panic = "abort"
             </pre>
 
             <p>
-                This already shaves off a few bytes of our program size, but there's more. There's a language item that we needed to provide to support unwinding. Here's what it looked like:
+                This already shaves off a few bytes from our program size, but there's more. There's a language item that we needed to provide to support unwinding. Here's what it looked like:
             </p>
 
             <pre>
@@ -128,13 +128,13 @@ pub extern fn eh_personality() {
                 <a name="note-1"></a>
                 <span class="footnote-number">[1]</span>
                 <p>
-                    I'm writing a lot in this article without pointing to a lot of references. This is because this is one of those topics that required a lot of reading and experimentation to get right. To get to my level of understanding, I had to pick up information from a lot of different sources, and not only would it be impractical to point to all of those, I can no longer find and/or remember most of them. If you need something to get you started, you can check out <a href="https://en.wikipedia.org/wiki/Data_segment">Wikipedia</a>. Also refer to the other pages linked at the bottom of that article.
+                    I'm writing a lot of text in this article without pointing to many references. This is because, to get to my current level of understanding, I had to pick through a lot of different sources, and not only would it be impractical to point to all of those, I can no longer find and/or remember most of them. If you need something to get you started, you can check out <a href="https://en.wikipedia.org/wiki/Data_segment">Wikipedia</a>. Also refer to the other pages linked at the bottom of that article.
                 </p>
 
                 <a name="note-2"></a>
                 <span class="footnote-number">[2]</span>
                 <p>
-                    I won't go into how all of that works in detail, simply because I don't want to open that can of worms. There's a <a href="https://github.com/hannobraun/embedded/blob/c84ceea9ba5210b2ab5a6165de2fdeaaacf4a911/blink/linker-script.ld">linker scripts</a> in the repository that you can study, if you want. The <a href="https://sourceware.org/binutils/docs/ld/index.html">linker documentation</a> should help you. Good luck.
+                    I won't go into how all of that works in detail. That's a can of worms I don't want to open. There's a <a href="https://github.com/hannobraun/embedded/blob/c84ceea9ba5210b2ab5a6165de2fdeaaacf4a911/blink/linker-script.ld">linker scripts</a> in the repository that you can study, if you want. The <a href="https://sourceware.org/binutils/docs/ld/index.html">linker documentation</a> should help you with that. Good luck.
                 </p>
             </footer>
 

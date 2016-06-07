@@ -56,6 +56,8 @@ extern {
     static mut _etext    : u32;
     static mut _srelocate: u32;
     static mut _erelocate: u32;
+    static mut _szero    : u32;
+    static mut _ezero    : u32;
 }
 
 
@@ -206,15 +208,23 @@ fn on_reset() {
         }
     }
 
-    // TODO: We should initialize the .bss segment here by writing zeros into
-    //       it. The .bss segment contains uninitialized global variables, and
-    //       while I don't actually think that Rust itself uses the .bss
-    //       segment (I might be totally wrong about this), we might want to
-    //       link to C libraries that require that segment.
-    //       Since I don't have a test case right now to verify if that the
-    //       code I would write for this is correct, I opted not to do this at
-    //       the moment. Once there is a test case, this should be a pretty
-    //       straight-forward thing to do.
+    // Initialize the .bss segment by zeroeing the memory.
+    // The .bss segment contains uninitialized global variables, and while I
+    // don't think that it is actually used by Rust itself (I might be totally
+    // wrong about this), this will be needed when linking to C libraries that
+    // require it.
+    // I tested this by linking with a C library that contained an
+    // uninitialized global variable, but as I'm writing this, this code is not
+    // used in any code currently in the repository. Please take great care
+    // when modifying it.
+    unsafe {
+        let mut dst = &mut _szero as *mut u32;
+
+        while dst < &mut _ezero as *mut u32 {
+            ptr::write_volatile(dst, 0);
+            dst = dst.offset(1);
+        }
+    }
 
     program::start()
 }

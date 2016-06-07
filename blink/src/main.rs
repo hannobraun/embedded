@@ -134,10 +134,10 @@ pub static VECTOR_TABLE: VectorTable = VectorTable {
 
     _reserved_1: [0; 1],
 
-    on_hard_fault             : abort,
-    on_memory_management_fault: abort,
-    on_bus_fault              : abort,
-    on_usage_fault            : abort,
+    on_hard_fault             : on_hard_fault,
+    on_memory_management_fault: on_memory_management_fault,
+    on_bus_fault              : on_bus_fault,
+    on_usage_fault            : on_usage_fault,
 
     _reserved_2: [0; 4],
 
@@ -217,6 +217,22 @@ fn on_reset() {
     //       straight-forward thing to do.
 
     program::start()
+}
+
+fn on_hard_fault() {
+    panic!("Unhandled hard fault");
+}
+
+fn on_memory_management_fault() {
+    panic!("Unhandled memory management fault");
+}
+
+fn on_bus_fault() {
+    panic!("Unhandled bus fault");
+}
+
+fn on_usage_fault() {
+    panic!("Unhandled usage fault");
 }
 
 // Used as a handler function for all interrupts we don't want to handle yet.

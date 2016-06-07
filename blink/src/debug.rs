@@ -31,5 +31,5 @@ macro_rules! print {
 
 macro_rules! println {
     ($fmt:expr)               => ( print!(concat!($fmt, '\n')) );
-    ($fmt:expr, $($args:tt)*) => ( print!(concat!($fmt, '\n'), args) );
+    ($fmt:expr, $($args:tt)*) => ( print!(concat!($fmt, '\n'), $($args)*) );
 }

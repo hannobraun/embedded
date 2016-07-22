@@ -84,19 +84,23 @@ impl Uart {
             _tx_pin: tx_pin,
         }
     }
+
+    pub fn write_byte(&mut self, b: u8) {
+        unsafe {
+            // Wait until transmitter is ready. See data sheet, sections
+            // 34.5.3.3 and 34.6.6.
+            while (*UART).status.read() & uart::TXRDY == 0 {}
+
+            // Send byte. See data sheet, sections 34.5.3.3 and 34.6.8.
+            (*UART).transmit_holding.write(b as u32);
+        }
+    }
 }
 
 impl fmt::Write for Uart {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for &b in s.as_bytes() {
-            unsafe {
-                // Wait until transmitter is ready. See data sheet, sections
-                // 34.5.3.3 and 34.6.6.
-                while (*UART).status.read() & uart::TXRDY == 0 {}
-
-                // Send byte. See data sheet, sections 34.5.3.3 and 34.6.8.
-                (*UART).transmit_holding.write(b as u32);
-            }
+            self.write_byte(b);
         }
 
         unsafe {

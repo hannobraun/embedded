@@ -26,7 +26,7 @@ fn main() {
             },
         };
 
-        print!("{}\n", value);
+        print!("{:0>#04X}\n", value);
 
         if let Err(error) = io::stdout().flush() {
             panic!("Failed to flush stdout: {}", error);

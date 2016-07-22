@@ -16,7 +16,7 @@ pub fn start() {
     // actually needed.
     interrupts::disable();
 
-    let mut nvic = unsafe { Nvic::new() };
+    let nvic = unsafe { Nvic::new() };
 
     let uart_tx = unsafe { pio::a().pin_9() };
     let mut uart = unsafe { Uart::new(uart_tx) };
@@ -44,9 +44,6 @@ pub fn start() {
         if value == 0 || value == u8::MAX {
             count_up = !count_up;
         }
-
-
-        sleep_ms(100, &mut nvic);
     }
 }
 

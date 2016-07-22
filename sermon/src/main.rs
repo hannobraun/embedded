@@ -49,7 +49,7 @@ fn open_port(path: &str) -> serial::Result<serial::SystemPort> {
     try!(port.configure(&serial::PortSettings {
         baud_rate   : serial::Baud9600,
         char_size   : serial::Bits8,
-        parity      : serial::ParityNone,
+        parity      : serial::ParityEven,
         stop_bits   : serial::Stop1,
         flow_control: serial::FlowNone,
     }));

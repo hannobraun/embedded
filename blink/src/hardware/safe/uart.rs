@@ -73,7 +73,7 @@ impl Uart {
 
         // Set parity to no parity. See data sheet, section 34.6.2.
         (*UART).mode.write(
-            uart::MODE_NORMAL | uart::PARITY_NO
+            uart::MODE_NORMAL | uart::PARITY_EVEN
         );
 
         // Enable receiver and transmitter. See data sheet, sections 34.5.2.1,

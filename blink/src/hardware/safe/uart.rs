@@ -97,24 +97,22 @@ impl Uart {
     }
 
     pub fn check_for_errors(&mut self) -> bool {
-        let mut error_occured = false;
-
         unsafe {
             if (*UART).status.read() & uart::OVRE != 0 {
-                error_occured = true;
+                return true;
             }
             if (*UART).status.read() & uart::FRAME != 0 {
-                error_occured = true;
+                return true;
             }
             if (*UART).status.read() & uart::PARE != 0 {
-                error_occured = true;
+                return true;
             }
 
             // Reset error flags, since we already read them.
             (*UART).control.write(uart::RSTSTA);
         }
 
-        error_occured
+        false
     }
 }
 

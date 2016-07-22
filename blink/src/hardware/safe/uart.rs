@@ -95,21 +95,10 @@ impl Uart {
             (*UART).transmit_holding.write(b as u32);
         }
     }
-}
 
-impl fmt::Write for Uart {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        for &b in s.as_bytes() {
-            self.write_byte(b);
-        }
-
-        unsafe {
-            // Wait until all bytes have been sent. See data sheet, sections
-            // 34.5.3.3 and 34.6.6.
-            while (*UART).status.read() & uart::TXEMPTY == 0 {}
-        }
-
+    pub fn check_for_errors(&mut self) -> bool {
         let mut error_occured = false;
+
         unsafe {
             if (*UART).status.read() & uart::OVRE != 0 {
                 error_occured = true;
@@ -125,7 +114,23 @@ impl fmt::Write for Uart {
             (*UART).control.write(uart::RSTSTA);
         }
 
-        if error_occured {
+        error_occured
+    }
+}
+
+impl fmt::Write for Uart {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        for &b in s.as_bytes() {
+            self.write_byte(b);
+        }
+
+        unsafe {
+            // Wait until all bytes have been sent. See data sheet, sections
+            // 34.5.3.3 and 34.6.6.
+            while (*UART).status.read() & uart::TXEMPTY == 0 {}
+        }
+
+        if self.check_for_errors() {
             // It would be nice to define an error enum and make it available
             // for later inspection.
             return Err(fmt::Error)

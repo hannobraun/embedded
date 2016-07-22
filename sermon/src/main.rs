@@ -14,6 +14,7 @@ fn main() {
         .expect("Failed to open serial port");
 
     let mut last_value = None;
+    let mut num_errors = 0;
 
     for value in serial_port.bytes() {
         let value = match value {
@@ -28,11 +29,12 @@ fn main() {
             },
         };
 
-        print!("{:0>#04X}", value);
+        print!("Number of Errors: {} / Value: {:0>#04X}", num_errors, value);
 
         if let Some(last_value) = last_value {
             if (value as i16 - last_value as i16).abs() != 1 {
                 print!(" <= Error\n");
+                num_errors += 1;
             }
             else {
                 print!("\n");

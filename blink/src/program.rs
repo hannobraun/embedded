@@ -16,8 +16,6 @@ pub fn start() {
     // actually needed.
     interrupts::disable();
 
-    let nvic = unsafe { Nvic::new() };
-
     let uart_tx = unsafe { pio::a().pin_9() };
     let mut uart = unsafe { Uart::new(uart_tx) };
 
@@ -29,9 +27,9 @@ pub fn start() {
         uart.write_byte(value);
         if let Err(error) = uart.check_for_errors() {
             match error {
-                uart::Error::Overrun => blink(nvic, 100, 900),
-                uart::Error::Framing => blink(nvic, 900, 100),
-                uart::Error::Parity  => blink(nvic, 500, 500),
+                uart::Error::Overrun => blink(100, 900),
+                uart::Error::Framing => blink(900, 100),
+                uart::Error::Parity  => blink(500, 500),
             }
         }
 
@@ -47,7 +45,9 @@ pub fn start() {
     }
 }
 
-fn blink(mut nvic: Nvic, v1: u32, v2: u32) -> ! {
+fn blink(v1: u32, v2: u32) -> ! {
+    let mut nvic = unsafe { Nvic::new() };
+
     // Pin 27 of the PIOB parallel I/O controller corresponds to pin 13 on the
     // Arduino Due, which is the built-in LED (labelled "L").
     let led = unsafe { pio::b().pin_27() };

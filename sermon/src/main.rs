@@ -13,6 +13,8 @@ fn main() {
     let serial_port = open_port(path)
         .expect("Failed to open serial port");
 
+    let mut last_value = None;
+
     for value in serial_port.bytes() {
         let value = match value {
             Ok(value) => value,
@@ -26,7 +28,22 @@ fn main() {
             },
         };
 
-        print!("{:0>#04X}\n", value);
+        print!("{:0>#04X}", value);
+
+        if let Some(last_value) = last_value {
+            if (value as i16 - last_value as i16).abs() != 1 {
+                print!(" <= Error\n");
+            }
+            else {
+                print!("\n");
+            }
+        }
+        else {
+            print!("\n");
+        }
+
+        last_value = Some(value);
+
 
         if let Err(error) = io::stdout().flush() {
             panic!("Failed to flush stdout: {}", error);

@@ -10,15 +10,24 @@ use serial::prelude::*;
 fn main() {
     let path = "/dev/ttyACM0";
 
-    let mut serial_port = open_port(path)
+    let serial_port = open_port(path)
         .expect("Failed to open serial port");
 
-    loop {
-        if let Err(error) = io::copy(&mut serial_port, &mut io::stdout()) {
-            if error.kind() != io::ErrorKind::TimedOut {
-                panic!("Failed to print serial output: {}", error);
-            }
-        }
+    for value in serial_port.bytes() {
+        let value = match value {
+            Ok(value) => value,
+            Err(error) => {
+                if error.kind() != io::ErrorKind::TimedOut {
+                    panic!("Failed to print serial output: {}", error);
+                }
+                else {
+                    continue;
+                }
+            },
+        };
+
+        print!("{}\n", value);
+
         if let Err(error) = io::stdout().flush() {
             panic!("Failed to flush stdout: {}", error);
         }

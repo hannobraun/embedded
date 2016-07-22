@@ -96,23 +96,23 @@ impl Uart {
         }
     }
 
-    pub fn check_for_errors(&mut self) -> bool {
+    pub fn check_for_errors(&mut self) -> Result<(), Error> {
         unsafe {
             if (*UART).status.read() & uart::OVRE != 0 {
-                return true;
+                return Err(Error::Overrun);
             }
             if (*UART).status.read() & uart::FRAME != 0 {
-                return true;
+                return Err(Error::Framing);
             }
             if (*UART).status.read() & uart::PARE != 0 {
-                return true;
+                return Err(Error::Parity);
             }
 
             // Reset error flags, since we already read them.
             (*UART).control.write(uart::RSTSTA);
         }
 
-        false
+        Ok(())
     }
 }
 
@@ -128,12 +128,17 @@ impl fmt::Write for Uart {
             while (*UART).status.read() & uart::TXEMPTY == 0 {}
         }
 
-        if self.check_for_errors() {
-            // It would be nice to define an error enum and make it available
-            // for later inspection.
+        if let Err(_) = self.check_for_errors() {
             return Err(fmt::Error)
         }
 
         Ok(())
     }
+}
+
+
+pub enum Error {
+    Overrun,
+    Framing,
+    Parity,
 }

@@ -7,7 +7,6 @@
 
 
 mod eefc;
-mod result;
 mod sam_ba;
 mod serial_port;
 mod utils;

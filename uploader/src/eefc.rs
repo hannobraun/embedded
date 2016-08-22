@@ -1,4 +1,5 @@
-use result::Result;
+use std::io;
+
 use sam_ba::SamBa;
 
 
@@ -31,7 +32,7 @@ impl Eefc {
     /// 18.5 (especially 18.5.2) for information about what's going on in this
     /// method.
     pub fn execute_command<C, A>(&self, sam_ba: &mut SamBa, argument: A)
-        -> Result<u32>
+        -> io::Result<u32>
         where
             C: Command<Argument=A>,
             A: Argument,

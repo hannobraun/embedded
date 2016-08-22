@@ -1,4 +1,5 @@
 use std::io::{
+    self,
     copy,
     sink,
 };
@@ -10,7 +11,6 @@ use byteorder::{
 };
 use serial;
 
-use result::Result;
 use utils::ignore_timeout;
 
 
@@ -28,7 +28,7 @@ impl SamBa {
 
     /// Configures serial communication to be in normal mode (i.e. data is
     /// binary).
-    pub fn set_normal_mode(&mut self) -> Result<()> {
+    pub fn set_normal_mode(&mut self) -> io::Result<()> {
         try!(write!(self.port, "N#"));
 
         // SAM-BA seems to send some kind of reply to that command, but I can't
@@ -40,7 +40,7 @@ impl SamBa {
         Ok(())
     }
 
-    pub fn display_version(&mut self) -> Result<String> {
+    pub fn display_version(&mut self) -> io::Result<String> {
         try!(write!(self.port, "V#"));
 
         let mut version = String::new();
@@ -49,14 +49,14 @@ impl SamBa {
         Ok(version)
     }
 
-    pub fn read_word(&mut self, address: u32) -> Result<u32> {
+    pub fn read_word(&mut self, address: u32) -> io::Result<u32> {
         try!(write!(self.port, "w{:0>8X},#", address));
         let result = try!(self.port.read_u32::<LittleEndian>());
 
         Ok(result)
     }
 
-    pub fn write_word(&mut self, address: u32, value: u32) -> Result<()> {
+    pub fn write_word(&mut self, address: u32, value: u32) -> io::Result<()> {
         try!(write!(self.port, "W{:0>8X},{:0>8X}#", address, value));
         Ok(())
     }

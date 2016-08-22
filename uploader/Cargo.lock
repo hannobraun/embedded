@@ -42,3 +42,9 @@ dependencies = [
  "libc 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
+[metadata]
+"checksum byteorder 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "96c8b41881888cc08af32d47ac4edd52bc7fa27fef774be47a92443756451304"
+"checksum ioctl-rs 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "92dc92a164c5a1d0af5992616985948fd369189b2c1bc5f21b9b0d963c8ffd41"
+"checksum libc 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "10569e57695cc2c91ca4214357907649c9e242dc822c9ae623d0e0b0d68aa4d9"
+"checksum serial 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "5c766b0f30e5829926d7722c40ec1b59b6d217f140a81ba68aad42541f2bacfc"
+"checksum termios 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ea878a0286ff8765e971197196192721921a47d715d3e953d4c1272242e02da8"

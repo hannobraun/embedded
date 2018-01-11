@@ -1,3 +1,6 @@
+**NOTE: This is an old and abandoned repository. If you want to learn about using Rust for embedded development, check out [http://blog.japaric.io/quickstart/](http://blog.japaric.io/quickstart/). If you want to see what I'm doing these days with Rust and embedded, please go to [https://github.com/braun-robotics](https://github.com/braun-robotics).**
+
+
 ## Introduction
 
 I'm teaching myself embedded programming using Rust, and this repository contains the code I produce. Please check out the accompanying blog at http://embedded.hannobraun.de/.
